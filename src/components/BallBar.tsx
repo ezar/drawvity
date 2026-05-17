@@ -54,7 +54,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
           boxShadow: selected
             ? `0 0 0 2px ${palette.paper}, 0 0 0 4px ${palette.ink}`
             : toy.shadow,
-          transform: selected ? 'translateY(-2px)' : 'none',
+          transform: selected ? 'translateY(-2px)' : 'translateY(0)',
           transition: 'transform .15s ease, box-shadow .15s ease',
         }}
       >
@@ -79,7 +79,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
             ? `0 0 0 2px ${palette.paper}, 0 0 0 4px ${palette.ink}`
             : '0 1px 3px rgba(31,26,20,.2)',
           cursor: 'pointer',
-          transform: sel ? 'scale(1.15) translateY(-1px)' : 'none',
+          transform: sel ? 'scale(1.15) translateY(-1px)' : 'scale(1) translateY(0)',
           transition: 'transform .12s ease, box-shadow .12s ease',
         }}
       />
