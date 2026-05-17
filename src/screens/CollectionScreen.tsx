@@ -27,15 +27,15 @@ export function CollectionScreen({ onBack }: Props) {
     .map(c => c.id)
 
   return (
-    <div style={{ width: '100%', height: '100%', background: palette.paper, display: 'flex', flexDirection: 'column', padding: '28px 40px 24px', gap: 20, overflow: 'auto' }}>
+    <div style={{ width: '100%', height: '100%', background: palette.paper, display: 'flex', flexDirection: 'column', padding: portrait ? '20px 16px 16px' : '28px 40px 24px', gap: portrait ? 16 : 20, overflow: 'auto' }}>
       {/* header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: 999, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontSize: 18, boxShadow: toy.shadow }}>←</button>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: 999, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontSize: 18, boxShadow: toy.shadow, flexShrink: 0 }}>←</button>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase', color: palette.inkSoft }}>your collection</div>
-          <h2 style={{ fontFamily: 'Caprasimo, serif', fontSize: 38, fontWeight: 400, color: palette.ink, margin: 0, lineHeight: 1 }}>Sticker album</h2>
+          <h2 style={{ fontFamily: 'Caprasimo, serif', fontSize: portrait ? 28 : 38, fontWeight: 400, color: palette.ink, margin: 0, lineHeight: 1 }}>Sticker album</h2>
         </div>
-        <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: palette.inkSoft }}>{unlockedBalls.length + unlockedColorIds.length} / {BALLS.length + STROKE_COLORS.length} unlocked</div>
+        {!portrait && <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: palette.inkSoft, flexShrink: 0 }}>{unlockedBalls.length + unlockedColorIds.length} / {BALLS.length + STROKE_COLORS.length} unlocked</div>}
       </div>
 
       {/* balls */}
