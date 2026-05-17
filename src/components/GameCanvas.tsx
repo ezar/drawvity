@@ -41,12 +41,16 @@ export function GameCanvas({
     drawStrokes(ctx, strokes, strokeColor)
   }, [width, height, world, level, strokes, strokeColor])
 
-  // ── setup canvases on mount / size change
+  // ── setup canvases ONLY on size change (avoids compounding ctx.scale)
   useEffect(() => {
     if (staticRef.current)  setupCanvas(staticRef.current,  width, height)
     if (dynamicRef.current) setupCanvas(dynamicRef.current, width, height)
+  }, [width, height])
+
+  // ── re-render static layer whenever content changes
+  useEffect(() => {
     renderStatic()
-  }, [width, height, renderStatic])
+  }, [renderStatic])
 
   // ── goal star pulse on dynamic canvas (idle)
   useEffect(() => {
