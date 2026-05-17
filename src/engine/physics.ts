@@ -23,11 +23,10 @@ export function createPolylineBodies(
     const my = (p1.y + p2.y) / 2
 
     const body = Matter.Bodies.rectangle(mx, my, len, SEGMENT_HEIGHT, {
-      isStatic: true,
+      isStatic: options.isStatic ?? true,
       angle,
-      friction: 0.3,
-      restitution: 0.3,
-      ...options,
+      friction: options.friction ?? 0.3,
+      restitution: options.restitution ?? 0.3,
     })
     Matter.World.add(world, body)
   }

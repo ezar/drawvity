@@ -18,7 +18,7 @@ const STROKE_COLORS = [
 const UNLOCK_AT_STARS = [0, 0, 0, 0, 10, 20, 30, 40]
 
 export function CollectionScreen({ onBack }: Props) {
-  const { unlockedBalls, unlockedColors, progress } = useGameStore()
+  const { unlockedBalls, progress } = useGameStore()
   const totalStarsAll = Object.values(progress).flatMap(p => p.stars).reduce((a, b) => a + b, 0)
   const unlockedColorIds = STROKE_COLORS
     .filter((_, i) => totalStarsAll >= UNLOCK_AT_STARS[i])
