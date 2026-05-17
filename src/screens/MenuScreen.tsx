@@ -3,7 +3,8 @@ import { toy, palette } from '../theme/toy'
 import { useIsPortrait } from '../hooks/useIsPortrait'
 import { playTap } from '../engine/audio'
 import { hapticTap } from '../hooks/useHaptic'
-import type { ScreenId } from '../types'
+import { useGameStore } from '../store/gameStore'
+import type { Difficulty, ScreenId } from '../types'
 
 interface Props { onNav: (s: ScreenId) => void }
 
@@ -13,8 +14,15 @@ const CARDS = [
   { id: 'collection' as ScreenId, label: 'Collection', desc: 'Your unlocks',     icon: '★', tone: palette.secondary },
 ]
 
+const DIFFICULTIES: { id: Difficulty; label: string; desc: string }[] = [
+  { id: 'easy',   label: 'Easy',   desc: '4 strokes · preview' },
+  { id: 'medium', label: 'Medium', desc: '3 strokes'           },
+  { id: 'hard',   label: 'Hard',   desc: '2 strokes'           },
+]
+
 export function MenuScreen({ onNav }: Props) {
   const portrait = useIsPortrait()
+  const { difficulty, setDifficulty } = useGameStore()
 
   return (
     <div style={{
@@ -55,6 +63,37 @@ export function MenuScreen({ onNav }: Props) {
           <p style={{ fontFamily: 'Nunito', fontSize: 16, color: palette.inkSoft, maxWidth: 340, marginTop: 6, lineHeight: 1.5 }}>
             Sketch a path. Drop a ball. The drawing comes alive — bouncing, rolling, sliding to the star.
           </p>
+        )}
+
+        {/* difficulty selector */}
+        <div style={{ display: 'flex', gap: 6, marginTop: portrait ? 4 : 8 }}>
+          {DIFFICULTIES.map(d => {
+            const active = d.id === difficulty
+            return (
+              <motion.button
+                key={d.id}
+                whileTap={{ scale: 0.92 }}
+                onClick={() => { hapticTap(); playTap(); setDifficulty(d.id) }}
+                style={{
+                  padding: '7px 14px', borderRadius: 999,
+                  border: active ? `2px solid ${palette.ink}` : toy.border,
+                  background: active ? palette.ink : palette.paper,
+                  color: active ? palette.paper : palette.inkSoft,
+                  fontFamily: 'JetBrains Mono', fontSize: 11, fontWeight: 700,
+                  letterSpacing: '.06em', textTransform: 'uppercase',
+                  cursor: 'pointer', transition: 'all .15s ease',
+                }}
+              >
+                {d.label}
+                {active && d.id === 'easy' && <span style={{ marginLeft: 4, opacity: .7 }}>✎</span>}
+              </motion.button>
+            )
+          })}
+        </div>
+        {difficulty === 'easy' && (
+          <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: palette.inkSoft, opacity: .8, marginTop: 2 }}>
+            trajectory preview enabled
+          </div>
         )}
       </div>
 

@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 import type { Level, WorldDef, BallDef, Point } from '../types'
-import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail, drawBallSpawn, createWinParticles } from '../engine/renderer'
-import { createPhysicsWorld, stepEngine, destroyPhysicsWorld } from '../engine/physics'
+import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail, drawBallSpawn, drawTrajectory, createWinParticles } from '../engine/renderer'
+import { createPhysicsWorld, stepEngine, destroyPhysicsWorld, simulateTrajectory } from '../engine/physics'
 import { playDraw, playLaunch, playBounce } from '../engine/audio'
 import Matter from 'matter-js'
 import type { TrailPoint } from '../engine/renderer'
@@ -17,6 +17,7 @@ interface Props {
   ball: BallDef
   strokeColor: string
   launching: boolean
+  showTrajectory: boolean
   onWin: (strokesUsed: number) => void
   onLoss: () => void
   strokes: Point[][]
@@ -25,23 +26,28 @@ interface Props {
 
 export function GameCanvas({
   width, height, level, world, ball,
-  strokeColor, launching, onWin, onLoss,
-  strokes, setStrokes,
+  strokeColor, launching, showTrajectory,
+  onWin, onLoss, strokes, setStrokes,
 }: Props) {
   const staticRef = useRef<HTMLCanvasElement>(null)
   const dynamicRef = useRef<HTMLCanvasElement>(null)
   const drawingRef = useRef<Point[] | null>(null)
   const rafRef = useRef(0)
 
-  // ── render static layer (BG + obstacles + strokes + spawn indicator)
+  // ── render static layer (BG + obstacles + strokes + trajectory + spawn indicator)
   const renderStatic = useCallback(() => {
     const c = staticRef.current; if (!c) return
     const ctx = c.getContext('2d')!
     drawWorldBg(ctx, width, height, world)
     drawObstacles(ctx, level.obstacles, width, height, world.accent)
     drawStrokes(ctx, strokes, strokeColor)
+    // trajectory preview (easy mode only, when strokes exist, before launch)
+    if (showTrajectory && strokes.length > 0 && !launching) {
+      const traj = simulateTrajectory(level, strokes, ball, world, width, height, 280)
+      drawTrajectory(ctx, traj, ball.color)
+    }
     drawBallSpawn(ctx, level.ballSpawn, width, height, ball.color, launching)
-  }, [width, height, world, level, strokes, strokeColor, ball.color, launching])
+  }, [width, height, world, level, strokes, strokeColor, ball, launching, showTrajectory])
 
   // ── setup canvases ONLY on size change (avoids compounding ctx.scale)
   useEffect(() => {

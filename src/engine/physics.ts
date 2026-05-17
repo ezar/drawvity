@@ -116,3 +116,28 @@ export function destroyPhysicsWorld(engine: Matter.Engine): void {
   Matter.World.clear(engine.world, false)
   Matter.Engine.clear(engine)
 }
+
+/**
+ * Headless physics simulation for trajectory preview (Easy mode).
+ * Runs synchronously — fast enough (<5ms for 300 steps).
+ * Returns sampled ball positions (every 3rd frame).
+ */
+export function simulateTrajectory(
+  level: Level,
+  strokes: Point[][],
+  ball: BallDef,
+  worldDef: WorldDef,
+  canvasW: number,
+  canvasH: number,
+  steps = 300
+): Point[] {
+  const { engine, ballBody } = createPhysicsWorld(level, strokes, ball, worldDef, canvasW, canvasH)
+  const path: Point[] = []
+  for (let i = 0; i < steps; i++) {
+    Matter.Engine.update(engine, 1000 / 60)
+    if (i % 3 === 0) path.push({ x: ballBody.position.x, y: ballBody.position.y })
+    if (ballBody.position.y > canvasH + 60) break
+  }
+  destroyPhysicsWorld(engine)
+  return path
+}

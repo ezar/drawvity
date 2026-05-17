@@ -10,6 +10,7 @@ import { BALL_MAP } from '../data/balls'
 import { getLevel } from '../data/levels'
 import { palette } from '../theme/toy'
 import { STROKE_COLORS } from '../data/colors'
+import { DIFFICULTY_STROKES } from '../types'
 import type { Point } from '../types'
 
 interface Props {
@@ -19,13 +20,16 @@ interface Props {
 }
 
 export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
-  const { currentWorld, currentLevel, selectedBall, selectBall, selectedColorId, recordResult } = useGameStore()
+  const { currentWorld, currentLevel, selectedBall, selectBall, selectedColorId, difficulty, recordResult } = useGameStore()
   const strokeColor = STROKE_COLORS.find(c => c.id === selectedColorId)?.hex ?? palette.ink
+  const strokesMax = freeDraw ? Infinity : DIFFICULTY_STROKES[difficulty]
+  const showTrajectory = difficulty === 'easy' && !freeDraw
   const world = WORLD_MAP[currentWorld]
   const ball = BALL_MAP[selectedBall]
-  const level = freeDraw
+  const baseLevel = freeDraw
     ? { id: 'free', name: 'Free Draw', worldId: currentWorld, ballSpawn: { x: 0.1, y: 0.1 }, goal: { x: -1, y: -1 }, strokesMax: Infinity, obstacles: [] }
     : getLevel(currentWorld, currentLevel)
+  const level = { ...baseLevel, strokesMax }
 
   const [strokes, setStrokes] = useState<Point[][]>([])
   const [launching, setLaunching] = useState(false)
@@ -103,6 +107,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
           ball={ball}
           strokeColor={strokeColor}
           launching={launching}
+          showTrajectory={showTrajectory}
           onWin={handleWin}
           onLoss={handleLoss}
           strokes={strokes}

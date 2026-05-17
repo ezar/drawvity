@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { WorldId, BallId, ScreenId, Progress } from '../types'
+import type { WorldId, BallId, ScreenId, Progress, Difficulty } from '../types'
 
 const WORLD_ORDER: WorldId[] = ['lab', 'factory', 'castle', 'space']
 const UNLOCK_THRESHOLD = 15
@@ -15,6 +15,7 @@ const initialData = {
   currentLevel: 0,
   selectedBall: 'classic' as BallId,
   selectedColorId: 'ink' as string,
+  difficulty: 'medium' as Difficulty,
   progress: {
     lab:     emptyProgress(),
     factory: emptyProgress(),
@@ -31,6 +32,7 @@ interface GameState {
   currentLevel: number
   selectedBall: BallId
   selectedColorId: string
+  difficulty: Difficulty
   progress: Record<WorldId, Progress>
   unlockedBalls: BallId[]
   unlockedColors: string[]
@@ -43,6 +45,7 @@ interface GameState {
   setLevel: (n: number) => void
   selectBall: (b: BallId) => void
   selectColor: (id: string) => void
+  setDifficulty: (d: Difficulty) => void
   recordResult: (world: WorldId, level: number, stars: number) => void
   getInitialState: () => typeof initialData
 }
@@ -69,6 +72,7 @@ export const useGameStore = create<GameState>()(
       setLevel: (currentLevel) => set({ currentLevel }),
       selectBall: (selectedBall) => set({ selectedBall }),
       selectColor: (selectedColorId) => set({ selectedColorId }),
+      setDifficulty: (difficulty) => set({ difficulty }),
 
       recordResult: (world, level, stars) => {
         const prev = get().progress[world].stars[level] ?? 0
@@ -98,6 +102,7 @@ export const useGameStore = create<GameState>()(
         unlockedColors:  s.unlockedColors,
         selectedBall:    s.selectedBall,
         selectedColorId: s.selectedColorId,
+        difficulty:      s.difficulty,
       }),
     }
   )
