@@ -40,7 +40,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
   // Viewport-aware canvas size — updates on resize
   // Portrait: BallBar has 2 rows (~138px); Landscape: 1 row (~88px)
   const hudTop = 56
-  const getHudBottom = () => 112  // label (22px) + pill (58px) + padding (32px)
+  const getHudBottom = () => 68   // single-row pill (46px) + padding (22px)
   const [size, setSize] = useState(() => ({
     w: window.innerWidth,
     h: window.innerHeight - hudTop - getHudBottom(),
