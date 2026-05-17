@@ -36,12 +36,17 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
   const showHint = !canLaunch && !launching
 
   // ── shared chip styles ──────────────────────────────────────────────────────
+  // Use FM `animate` (not CSS transform) so whileTap and selection share same transform space.
+  // `initial={false}` skips mount animation → no glitch on first render.
   const ballChip = (b: typeof BALLS[number], size: number) => {
     const unlocked = unlockedBalls.includes(b.id)
     const selected = b.id === selectedBall
     return (
       <motion.button
         key={b.id}
+        initial={false}
+        animate={{ y: selected ? -2 : 0 }}
+        transition={{ duration: 0.15, ease: 'easeOut' }}
         whileTap={unlocked ? { scale: 0.84 } : {}}
         onClick={() => { if (!unlocked) return; hapticTap(); playTap(); onSelectBall(b.id) }}
         disabled={!unlocked}
@@ -54,8 +59,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
           boxShadow: selected
             ? `0 0 0 2px ${palette.paper}, 0 0 0 4px ${palette.ink}`
             : toy.shadow,
-          transform: selected ? 'translateY(-2px)' : 'translateY(0)',
-          transition: 'transform .15s ease, box-shadow .15s ease',
+          transition: 'box-shadow .15s ease',
         }}
       >
         {!unlocked && <span style={{ fontSize: size * 0.45 }}>🔒</span>}
@@ -68,8 +72,11 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
     return (
       <motion.button
         key={c.id}
-        title={c.name}
+        initial={false}
+        animate={{ scale: sel ? 1.15 : 1, y: sel ? -1 : 0 }}
+        transition={{ duration: 0.12, ease: 'easeOut' }}
         whileTap={{ scale: 0.86 }}
+        title={c.name}
         onClick={() => { hapticTap(); playTap(); selectColor(c.id) }}
         style={{
           width: size, height: size, flexShrink: 0,
@@ -79,8 +86,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
             ? `0 0 0 2px ${palette.paper}, 0 0 0 4px ${palette.ink}`
             : '0 1px 3px rgba(31,26,20,.2)',
           cursor: 'pointer',
-          transform: sel ? 'scale(1.15) translateY(-1px)' : 'scale(1) translateY(0)',
-          transition: 'transform .12s ease, box-shadow .12s ease',
+          transition: 'box-shadow .12s ease',
         }}
       />
     )
