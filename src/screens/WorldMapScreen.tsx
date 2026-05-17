@@ -18,9 +18,14 @@ export function WorldMapScreen({ onBack, onPickWorld }: Props) {
   return (
     <div style={{
       width: '100%', height: '100%', background: palette.paper,
-      display: 'flex', flexDirection: 'column',
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+      overflow: portrait ? 'auto' : 'hidden',
+    }}>
+    <div style={{
+      width: '100%', maxWidth: portrait ? '100%' : 1100,
+      flex: 1, display: 'flex', flexDirection: 'column',
       padding: portrait ? '20px 16px 16px' : '28px 40px 24px',
-      gap: portrait ? 12 : 16, overflow: 'hidden',
+      gap: portrait ? 12 : 16, minHeight: 0,
     }}>
       {/* header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -91,6 +96,7 @@ export function WorldMapScreen({ onBack, onPickWorld }: Props) {
           )
         })}
       </div>
+    </div>
     </div>
   )
 }

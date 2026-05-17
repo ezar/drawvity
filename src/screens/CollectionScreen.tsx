@@ -27,7 +27,8 @@ export function CollectionScreen({ onBack }: Props) {
     .map(c => c.id)
 
   return (
-    <div style={{ width: '100%', height: '100%', background: palette.paper, display: 'flex', flexDirection: 'column', padding: portrait ? '20px 16px 16px' : '28px 40px 24px', gap: portrait ? 16 : 20, overflow: 'auto' }}>
+    <div style={{ width: '100%', height: '100%', background: palette.paper, display: 'flex', flexDirection: 'column', alignItems: 'center', overflow: 'auto' }}>
+    <div style={{ width: '100%', maxWidth: portrait ? '100%' : 1100, display: 'flex', flexDirection: 'column', padding: portrait ? '20px 16px 16px' : '28px 40px 24px', gap: portrait ? 16 : 20 }}>
       {/* header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: 999, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontSize: 18, boxShadow: toy.shadow, flexShrink: 0 }}>←</button>
@@ -82,6 +83,7 @@ export function CollectionScreen({ onBack }: Props) {
           })}
         </div>
       </section>
+    </div>
     </div>
   )
 }
