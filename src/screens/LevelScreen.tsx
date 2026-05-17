@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { GameCanvas } from '../components/GameCanvas'
 import { HUD } from '../components/HUD'
 import { BallBar } from '../components/BallBar'
@@ -29,7 +29,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
   const [launching, setLaunching] = useState(false)
   const [overlay, setOverlay] = useState<'win' | 'loss' | null>(null)
   const [strokesUsedOnWin, setStrokesUsedOnWin] = useState(0)
-  const keyRef = useRef(0)  // force GameCanvas remount on retry
+  const [retryKey, setRetryKey] = useState(0)  // force GameCanvas remount on retry
 
   // Viewport-aware canvas size
   const hudTop = 56
@@ -55,7 +55,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
   }, [])
 
   const retry = () => {
-    keyRef.current += 1
+    setRetryKey((k) => k + 1)
     setStrokes([])
     setLaunching(false)
     setOverlay(null)
@@ -81,7 +81,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
       {/* canvas area */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <GameCanvas
-          key={keyRef.current}
+          key={retryKey}
           width={size.w}
           height={size.h}
           level={level}
