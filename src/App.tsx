@@ -22,9 +22,9 @@ export default function App() {
   const goMap = () => setScreen('map')
   const goMenu = () => setScreen('menu')
 
-  const pickWorld = (w: WorldId) => {
+  const pickWorld = (w: WorldId, level: number) => {
     setWorld(w)
-    setLevel(0)
+    setLevel(level)
     setScreen('level')
   }
 
