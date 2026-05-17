@@ -1,6 +1,10 @@
 export type WorldId = 'lab' | 'factory' | 'castle' | 'space'
 export type BallId = 'classic' | 'heavy' | 'bouncy' | 'feather' | 'magnet' | 'comet'
-export type ScreenId = 'menu' | 'map' | 'level' | 'free' | 'collection' | 'editor'
+export type ScreenId = 'menu' | 'map' | 'level' | 'free' | 'collection' | 'editor' | 'custom'
+
+export interface CustomLevel extends Level {
+  createdAt: number
+}
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
 export const DIFFICULTY_STROKES: Record<Difficulty, number> = {

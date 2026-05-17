@@ -50,6 +50,8 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
         whileTap={unlocked ? { scale: 0.84 } : {}}
         onClick={() => { if (!unlocked) return; hapticTap(); playTap(); onSelectBall(b.id) }}
         disabled={!unlocked}
+        aria-label={`${b.name} ball${!unlocked ? ' (locked)' : ''}`}
+        aria-pressed={selected}
         title={b.name}
         style={{
           width: size, height: size, flexShrink: 0,
@@ -76,6 +78,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
         animate={{ scale: sel ? 1.15 : 1, y: sel ? -1 : 0 }}
         transition={{ duration: 0.12, ease: 'easeOut' }}
         whileTap={{ scale: 0.86 }}
+        aria-label={c.name} aria-pressed={sel}
         title={c.name}
         onClick={() => { hapticTap(); playTap(); selectColor(c.id) }}
         style={{
@@ -114,6 +117,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
     <motion.button
       whileTap={canLaunch && !launching ? { scale: 0.93 } : {}}
       onClick={() => { if (!canLaunch || launching) return; hapticLaunch(); onLaunch() }}
+      aria-label="Launch ball (Space)"
       disabled={!canLaunch || launching}
       style={{
         height: PILL_H, padding: '0 20px',

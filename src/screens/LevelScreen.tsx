@@ -11,24 +11,27 @@ import { getLevel } from '../data/levels'
 import { palette } from '../theme/toy'
 import { STROKE_COLORS } from '../data/colors'
 import { DIFFICULTY_STROKES } from '../types'
-import type { Point } from '../types'
+import type { Point, Level } from '../types'
 
 interface Props {
-  onBack: () => void      // → world map
-  onNextLevel: () => void // advance level index
+  onBack: () => void
+  onNextLevel: () => void
   freeDraw?: boolean
+  customLevel?: Level    // when set, overrides world/level from store
 }
 
-export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
+export function LevelScreen({ onBack, onNextLevel, freeDraw = false, customLevel }: Props) {
   const { currentWorld, currentLevel, selectedBall, selectBall, selectedColorId, difficulty, recordResult } = useGameStore()
   const strokeColor = STROKE_COLORS.find(c => c.id === selectedColorId)?.hex ?? palette.ink
-  const strokesMax = freeDraw ? Infinity : DIFFICULTY_STROKES[difficulty]
-  const showTrajectory = difficulty === 'easy' && !freeDraw
-  const world = WORLD_MAP[currentWorld]
+  const strokesMax = customLevel ? customLevel.strokesMax : (freeDraw ? Infinity : DIFFICULTY_STROKES[difficulty])
+  const showTrajectory = difficulty === 'easy' && !freeDraw && !customLevel
+  const world = WORLD_MAP[customLevel?.worldId ?? currentWorld]
   const ball = BALL_MAP[selectedBall]
-  const baseLevel = freeDraw
-    ? { id: 'free', name: 'Free Draw', worldId: currentWorld, ballSpawn: { x: 0.1, y: 0.1 }, goal: { x: -1, y: -1 }, strokesMax: Infinity, obstacles: [] }
-    : getLevel(currentWorld, currentLevel)
+  const baseLevel = customLevel
+    ? customLevel
+    : freeDraw
+      ? { id: 'free', name: 'Free Draw', worldId: currentWorld, ballSpawn: { x: 0.1, y: 0.1 }, goal: { x: -1, y: -1 }, strokesMax: Infinity, obstacles: [] }
+      : getLevel(currentWorld, currentLevel)
   const level = { ...baseLevel, strokesMax }
 
   const [strokes, setStrokes] = useState<Point[][]>([])

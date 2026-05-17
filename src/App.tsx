@@ -17,7 +17,7 @@ const slide = {
 }
 
 export default function App() {
-  const { screen, setScreen, setWorld, setLevel, currentWorld, currentLevel } = useGameStore()
+  const { screen, setScreen, setWorld, setLevel, currentWorld, currentLevel, customLevels, playingCustomId } = useGameStore()
 
   const goMap = () => setScreen('map')
   const goMenu = () => setScreen('menu')
@@ -78,6 +78,15 @@ export default function App() {
             <LevelEditorScreen onBack={goMenu} />
           </motion.div>
         )}
+
+        {screen === 'custom' && (() => {
+          const lvl = customLevels.find(c => c.id === playingCustomId)
+          return lvl ? (
+            <motion.div key={`custom-${playingCustomId}`} {...slide} style={{ position: 'absolute', inset: 0 }}>
+              <LevelScreen onBack={() => setScreen('editor')} onNextLevel={() => setScreen('editor')} customLevel={lvl} />
+            </motion.div>
+          ) : null
+        })()}
       </AnimatePresence>
       <UnlockToast />
     </div>

@@ -11,7 +11,7 @@ import {
 } from '../engine/renderer'
 import { playTap } from '../engine/audio'
 import { hapticTap } from '../hooks/useHaptic'
-import type { Point, Obstacle, WorldId } from '../types'
+import type { Point, Obstacle, WorldId, CustomLevel } from '../types'
 
 type Tool = 'obstacle' | 'spawn' | 'goal' | 'erase'
 
@@ -21,7 +21,7 @@ const HUD_H     = 56
 const TOOLBAR_H = 64
 
 export function LevelEditorScreen({ onBack }: Props) {
-  const { selectedBall } = useGameStore()
+  const { selectedBall, saveCustomLevel, deleteCustomLevel, playCustomLevel, customLevels } = useGameStore()
 
   // ── editor state ───────────────────────────────────────────────────────────
   const [worldId, setWorldId]     = useState<WorldId>('lab')
@@ -38,8 +38,9 @@ export function LevelEditorScreen({ onBack }: Props) {
   const [testLaunching,  setTestLaunching]  = useState(false)
   const [testRetryKey,   setTestRetryKey]   = useState(0)
 
-  // ── export feedback ────────────────────────────────────────────────────────
+  // ── export / save feedback ─────────────────────────────────────────────────
   const [copied, setCopied] = useState(false)
+  const [saved,  setSaved]  = useState(false)
 
   const world  = WORLD_MAP[worldId]
   const ball   = BALL_MAP[selectedBall]
@@ -139,6 +140,22 @@ export function LevelEditorScreen({ onBack }: Props) {
     drawingRef.current = null
     if (pts.length > 1)
       setObstacles(prev => [...prev, { points: pts.map(normPt) }])
+  }
+
+  // ── save to store ──────────────────────────────────────────────────────────
+  const buildLevel = (): CustomLevel => ({
+    id: `custom-${Date.now()}`,
+    name: levelName || 'Untitled',
+    worldId, ballSpawn: spawn, goal, strokesMax,
+    obstacles: obstacles.map(o => ({
+      points: o.points.map(p => ({ x: +p.x.toFixed(3), y: +p.y.toFixed(3) })),
+    })),
+    createdAt: Date.now(),
+  })
+
+  const saveLevel = () => {
+    saveCustomLevel(buildLevel())
+    setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
 
   // ── export ─────────────────────────────────────────────────────────────────
@@ -325,6 +342,18 @@ export function LevelEditorScreen({ onBack }: Props) {
           }}
         >▶ Test</motion.button>
 
+        {/* Save to game */}
+        <motion.button whileTap={{ scale: 0.9 }}
+          onClick={saveLevel}
+          style={{
+            height: 34, padding: '0 14px', borderRadius: 999, border: 'none',
+            background: saved ? '#22c55e' : palette.secondary,
+            color: '#fff', fontFamily: 'Caprasimo, serif', fontSize: 14,
+            cursor: 'pointer', boxShadow: toy.shadow,
+            transition: 'background .2s ease', whiteSpace: 'nowrap', flexShrink: 0,
+          }}
+        >{saved ? '✓ Saved!' : '💾 Save'}</motion.button>
+
         {/* Copy JSON */}
         <motion.button whileTap={{ scale: 0.9 }}
           onClick={exportJSON}
@@ -386,6 +415,35 @@ export function LevelEditorScreen({ onBack }: Props) {
         {toolBtn('goal',     '⭐', 'Goal')}
         {toolBtn('erase',    '🗑️', 'Erase')}
       </div>
+
+      {/* Saved levels panel */}
+      {customLevels.length > 0 && (
+        <div style={{
+          flexShrink: 0, padding: '8px 12px 12px',
+          borderTop: `1px solid ${isSpace ? 'rgba(255,255,255,.1)' : 'rgba(31,26,20,.1)'}`,
+          maxHeight: 140, overflowY: 'auto',
+        }}>
+          <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: textColor, opacity: .45, marginBottom: 6 }}>
+            Saved levels
+          </div>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {customLevels.map(lvl => (
+              <div key={lvl.id} style={{ display: 'flex', alignItems: 'center', gap: 4, background: panelBg, border: toy.border, borderRadius: 999, padding: '4px 10px 4px 8px', boxShadow: toy.shadow }}>
+                <span style={{ fontSize: 12 }}>{WORLD_MAP[lvl.worldId]?.glyph ?? '🌍'}</span>
+                <span style={{ fontFamily: 'Nunito', fontSize: 12, color: textColor, maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{lvl.name}</span>
+                <motion.button whileTap={{ scale: 0.88 }}
+                  onClick={() => { hapticTap(); playCustomLevel(lvl.id) }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, padding: 0, color: palette.primary }}
+                >▶</motion.button>
+                <motion.button whileTap={{ scale: 0.88 }}
+                  onClick={() => { hapticTap(); deleteCustomLevel(lvl.id) }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, padding: 0, color: textColor, opacity: .4 }}
+                >✕</motion.button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

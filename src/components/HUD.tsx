@@ -35,6 +35,7 @@ export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onB
         <motion.button
           whileTap={{ scale: 0.88 }}
           onClick={() => { hapticTap(); playTap(); onBack() }}
+          aria-label="Back"
           style={{
             width: 34, height: 34, borderRadius: 999, border: toy.border,
             background: btnBg, color: textColor, cursor: 'pointer', fontSize: 15,
@@ -67,7 +68,7 @@ export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onB
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={() => { hapticTap(); playTap(); onUndo() }}
-            title="Undo last stroke"
+            aria-label="Undo last stroke" title="Undo last stroke (Z)"
             style={{
               width: 34, height: 34, borderRadius: 999, border: toy.border,
               background: btnBg, color: textColor, cursor: 'pointer', fontSize: 14,
@@ -78,7 +79,7 @@ export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onB
         <motion.button
           whileTap={{ scale: 0.88 }}
           onClick={() => { hapticTap(); playTap(); onRetry() }}
-          title="Retry"
+          aria-label="Retry level" title="Retry"
           style={{
             width: 34, height: 34, borderRadius: 999, border: toy.border,
             background: btnBg, color: textColor, cursor: 'pointer', fontSize: 14,
