@@ -247,7 +247,8 @@ export function drawBallSpawn(
   canvasW: number,
   canvasH: number,
   ballColor: string,
-  launching: boolean
+  launching: boolean,
+  hasStrokes = false
 ): void {
   if (launching) return
   const sx = spawn.x * canvasW
@@ -273,11 +274,18 @@ export function drawBallSpawn(
   ctx.fillStyle = 'rgba(255,255,255,.4)'
   ctx.beginPath(); ctx.arc(sx - r * 0.3, sy - r * 0.3, r * 0.32, 0, Math.PI * 2); ctx.fill()
 
-  // drop arrow below
+  // drop arrow or tap hint below
   ctx.fillStyle = 'rgba(31,26,20,.4)'
   ctx.font = '11px JetBrains Mono, monospace'
   ctx.textAlign = 'center'
   ctx.fillText('↓', sx, sy + r + 14)
+  // tap hint only when strokes exist
+  if (hasStrokes) {
+    ctx.font = '9px JetBrains Mono, monospace'
+    ctx.globalAlpha = 0.35
+    ctx.fillText('tap to launch', sx, sy + r + 26)
+    ctx.globalAlpha = 1
+  }
 
   ctx.restore()
 }
