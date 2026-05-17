@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/drawvity/pwa-64x64.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Drawvity</title>
     <meta name="theme-color" content="#FAF4E6" />
@@ -13,8 +13,50 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" />
+    <style>
+      #splash {
+        position: fixed; inset: 0;
+        background: #14110d;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        gap: 18px;
+        z-index: 9999;
+        transition: opacity 0.4s ease;
+      }
+      #splash.fade { opacity: 0; pointer-events: none; }
+      #splash-title {
+        font-family: Georgia, serif;
+        font-size: 42px;
+        color: #FAF4E6;
+        letter-spacing: -0.01em;
+        line-height: 1;
+      }
+      #splash-title span { color: #E25C3B; }
+      #splash-sub {
+        font-family: monospace;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(250,244,230,0.4);
+      }
+      #splash-ball {
+        width: 48px; height: 48px; border-radius: 50%;
+        background: #E25C3B;
+        box-shadow: 0 0 0 0 rgba(226,92,59,0.5);
+        animation: splash-pulse 1.2s ease-in-out infinite;
+      }
+      @keyframes splash-pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(226,92,59,0.5); }
+        50% { box-shadow: 0 0 0 16px rgba(226,92,59,0); }
+      }
+    </style>
   </head>
   <body>
+    <div id="splash">
+      <div id="splash-ball"></div>
+      <div id="splash-title">Draw<span>vity</span></div>
+      <div id="splash-sub">draw · watch · wonder</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
