@@ -36,14 +36,17 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
     paddingRight: 6,
   }
 
+  const PILL_H = BALL_SIZE + 12  // 46px — both pills same height
+
   const PILL: React.CSSProperties = {
     display: 'flex', gap: 6, alignItems: 'center',
-    padding: '6px 10px',
+    padding: `0 10px`,
+    height: PILL_H,
     background: panelBg, border: toy.border, borderRadius: 999,
     boxShadow: toy.shadow,
     overflowX: 'auto', scrollbarWidth: 'none',
     WebkitOverflowScrolling: 'touch',
-    flexShrink: 1, minWidth: 0,
+    flexShrink: 1, minWidth: 0, boxSizing: 'border-box',
   }
 
   const showHint = !canLaunch && !launching
@@ -135,7 +138,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
         onClick={() => { if (!canLaunch || launching) return; hapticLaunch(); onLaunch() }}
         disabled={!canLaunch || launching}
         style={{
-          height: BALL_SIZE + 12,
+          height: PILL_H,
           padding: '0 20px',
           background: canLaunch && !launching ? palette.primary : 'rgba(31,26,20,.18)',
           color: '#fff', border: 'none', borderRadius: 999,
