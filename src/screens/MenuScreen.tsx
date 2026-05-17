@@ -16,12 +16,17 @@ export function MenuScreen({ onNav }: Props) {
   return (
     <div style={{
       width: '100%', height: '100%', background: palette.paper,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      overflowY: portrait ? 'auto' : 'hidden',
+    }}>
+    <div style={{
+      width: '100%', maxWidth: portrait ? '100%' : 1100,
+      height: portrait ? 'auto' : '100%',
       display: 'flex',
       flexDirection: portrait ? 'column' : 'row',
       gap: portrait ? 24 : 48,
       padding: portrait ? '48px 28px 32px' : '72px 80px',
       alignItems: 'center', justifyContent: 'center',
-      position: 'relative', overflowY: portrait ? 'auto' : 'hidden',
     }}>
       {/* hero */}
       <div style={{
@@ -90,6 +95,7 @@ export function MenuScreen({ onNav }: Props) {
           v{__BUILD_VERSION__} · draw. watch. wonder.
         </div>
       </div>
+    </div>
     </div>
   )
 }
