@@ -1,0 +1,121 @@
+import type { Level } from '../../types'
+
+export const labLevels: Level[] = [
+  {
+    id: 'lab-1',
+    name: 'The Drop',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.85, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [],
+  },
+  {
+    id: 'lab-2',
+    name: 'The Shelf',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.85, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.28, y: 0.44 }, { x: 0.72, y: 0.44 }] },
+    ],
+  },
+  {
+    id: 'lab-3',
+    name: 'The Curve',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.85, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.15, y: 0.3 }, { x: 0.42, y: 0.55 }, { x: 0.7, y: 0.42 }] },
+    ],
+  },
+  {
+    id: 'lab-4',
+    name: 'The Steps',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.85, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.1, y: 0.35 }, { x: 0.38, y: 0.35 }] },
+      { points: [{ x: 0.42, y: 0.55 }, { x: 0.72, y: 0.55 }] },
+    ],
+  },
+  {
+    id: 'lab-5',
+    name: 'The Gap',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.85, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.05, y: 0.45 }, { x: 0.35, y: 0.45 }] },
+      { points: [{ x: 0.55, y: 0.45 }, { x: 0.88, y: 0.45 }] },
+    ],
+  },
+  {
+    id: 'lab-6',
+    name: 'The Ramp',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.15, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.05, y: 0.6 }, { x: 0.85, y: 0.28 }] },
+    ],
+  },
+  {
+    id: 'lab-7',
+    name: 'The Valley',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.5, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.0, y: 0.28 }, { x: 0.38, y: 0.62 }] },
+      { points: [{ x: 0.62, y: 0.62 }, { x: 1.0, y: 0.28 }] },
+    ],
+  },
+  {
+    id: 'lab-8',
+    name: 'The Zigzag',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.85, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.08, y: 0.35 }, { x: 0.33, y: 0.35 }] },
+      { points: [{ x: 0.38, y: 0.55 }, { x: 0.63, y: 0.55 }] },
+      { points: [{ x: 0.68, y: 0.35 }, { x: 0.92, y: 0.35 }] },
+    ],
+  },
+  {
+    id: 'lab-9',
+    name: 'The Wall',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.85, y: 0.78 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.48, y: 0.18 }, { x: 0.48, y: 0.62 }] },
+      { points: [{ x: 0.48, y: 0.62 }, { x: 0.92, y: 0.62 }] },
+    ],
+  },
+  {
+    id: 'lab-10',
+    name: 'The Gauntlet',
+    worldId: 'lab',
+    ballSpawn: { x: 0.1, y: 0.08 },
+    goal: { x: 0.88, y: 0.82 },
+    strokesMax: 3,
+    obstacles: [
+      { points: [{ x: 0.08, y: 0.32 }, { x: 0.38, y: 0.32 }] },
+      { points: [{ x: 0.42, y: 0.5 }, { x: 0.72, y: 0.5 }] },
+      { points: [{ x: 0.28, y: 0.68 }, { x: 0.58, y: 0.68 }] },
+      { points: [{ x: 0.62, y: 0.32 }, { x: 0.92, y: 0.32 }] },
+    ],
+  },
+]
