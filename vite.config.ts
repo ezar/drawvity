@@ -3,8 +3,22 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Build version: yy.mm.dd.hhmm
+function buildVersion(): string {
+  const d = new Date()
+  const yy  = String(d.getFullYear()).slice(2)
+  const mm  = String(d.getMonth() + 1).padStart(2, '0')
+  const dd  = String(d.getDate()).padStart(2, '0')
+  const hh  = String(d.getHours()).padStart(2, '0')
+  const min = String(d.getMinutes()).padStart(2, '0')
+  return `${yy}.${mm}.${dd}.${hh}${min}`
+}
+
 export default defineConfig({
   base: '/drawvity/',
+  define: {
+    __BUILD_VERSION__: JSON.stringify(buildVersion()),
+  },
   plugins: [
     react(),
     VitePWA({
