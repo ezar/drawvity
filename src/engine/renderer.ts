@@ -222,6 +222,23 @@ export function drawBallAndTrail(
 
 // ─── HiDPI canvas setup ──────────────────────────────────────────────────────
 
+// ─── Trajectory preview (Easy mode) ──────────────────────────────────────────
+
+export function drawTrajectory(ctx: CanvasRenderingContext2D, path: Point[], ballColor: string): void {
+  if (path.length < 2) return
+  ctx.save()
+  for (let i = 0; i < path.length; i++) {
+    const t = 1 - i / path.length          // 1 at start → 0 at end
+    const r = 2.5 * t + 0.8
+    ctx.globalAlpha = t * 0.55
+    ctx.fillStyle = ballColor
+    ctx.beginPath()
+    ctx.arc(path[i].x, path[i].y, r, 0, Math.PI * 2)
+    ctx.fill()
+  }
+  ctx.restore()
+}
+
 // ─── Ball spawn indicator ────────────────────────────────────────────────────
 
 export function drawBallSpawn(

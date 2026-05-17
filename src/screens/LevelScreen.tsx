@@ -10,6 +10,7 @@ import { BALL_MAP } from '../data/balls'
 import { getLevel } from '../data/levels'
 import { palette } from '../theme/toy'
 import { STROKE_COLORS } from '../data/colors'
+import { DIFFICULTY_STROKES } from '../types'
 import type { Point } from '../types'
 
 interface Props {
@@ -19,13 +20,16 @@ interface Props {
 }
 
 export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
-  const { currentWorld, currentLevel, selectedBall, selectBall, selectedColorId, recordResult } = useGameStore()
+  const { currentWorld, currentLevel, selectedBall, selectBall, selectedColorId, difficulty, recordResult } = useGameStore()
   const strokeColor = STROKE_COLORS.find(c => c.id === selectedColorId)?.hex ?? palette.ink
+  const strokesMax = freeDraw ? Infinity : DIFFICULTY_STROKES[difficulty]
+  const showTrajectory = difficulty === 'easy' && !freeDraw
   const world = WORLD_MAP[currentWorld]
   const ball = BALL_MAP[selectedBall]
-  const level = freeDraw
+  const baseLevel = freeDraw
     ? { id: 'free', name: 'Free Draw', worldId: currentWorld, ballSpawn: { x: 0.1, y: 0.1 }, goal: { x: -1, y: -1 }, strokesMax: Infinity, obstacles: [] }
     : getLevel(currentWorld, currentLevel)
+  const level = { ...baseLevel, strokesMax }
 
   const [strokes, setStrokes] = useState<Point[][]>([])
   const [launching, setLaunching] = useState(false)
@@ -57,6 +61,27 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
     setOverlay('win')
   }, [freeDraw, currentWorld, currentLevel, recordResult])
 
+  const handleShare = async () => {
+    // grab static canvas (has BG + obstacles + strokes)
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
+    if (!canvas) return
+    try {
+      const blob = await new Promise<Blob>((res, rej) =>
+        canvas.toBlob(b => b ? res(b) : rej(), 'image/png')
+      )
+      const file = new File([blob], 'drawvity-solution.png', { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Drawvity', text: 'Check my solution! 🎯' })
+      } else {
+        // fallback: download
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url; a.download = 'drawvity-solution.png'; a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch { /* user cancelled or not supported */ }
+  }
+
   const handleLoss = useCallback(() => {
     setLaunching(false)
     if (freeDraw) {
@@ -75,6 +100,11 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
     setOverlay(null)
   }
 
+  const undo = () => {
+    if (strokes.length === 0 || launching) return
+    setStrokes(strokes.slice(0, -1))
+  }
+
   return (
     <div style={{
       width: '100%', height: '100%',
@@ -90,6 +120,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
         strokesUsed={strokes.length}
         onBack={onBack}
         onRetry={retry}
+        onUndo={undo}
       />
 
       {/* canvas area */}
@@ -103,6 +134,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
           ball={ball}
           strokeColor={strokeColor}
           launching={launching}
+          showTrajectory={showTrajectory}
           onWin={handleWin}
           onLoss={handleLoss}
           strokes={strokes}
@@ -133,6 +165,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
             strokesMax={level.strokesMax}
             onImprove={retry}
             onNext={() => { setOverlay(null); onNextLevel() }}
+            onShare={handleShare}
           />
         )}
         {overlay === 'loss' && (
