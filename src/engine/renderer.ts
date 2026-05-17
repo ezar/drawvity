@@ -265,6 +265,93 @@ export function drawBallSpawn(
   ctx.restore()
 }
 
+// ─── Win particle system ─────────────────────────────────────────────────────
+
+interface Particle {
+  x: number; y: number
+  vx: number; vy: number
+  r: number; alpha: number
+  color: string; shape: 'circle' | 'star'
+}
+
+interface Ring { r: number; alpha: number; color: string }
+
+export interface WinParticles {
+  step: (ctx: CanvasRenderingContext2D, w: number, h: number) => boolean
+}
+
+export function createWinParticles(gx: number, gy: number, accentColor: string, ballColor: string): WinParticles {
+  const colors = [accentColor, ballColor, '#E8B73E', '#ffffff', '#FAF4E6']
+  const particles: Particle[] = []
+  for (let i = 0; i < 60; i++) {
+    const angle = Math.random() * Math.PI * 2
+    const speed = 3 + Math.random() * 10
+    particles.push({
+      x: gx, y: gy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - Math.random() * 4,
+      r: 4 + Math.random() * 7, alpha: 1,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      shape: Math.random() > 0.6 ? 'star' : 'circle',
+    })
+  }
+  const rings: Ring[] = [
+    { r: 12, alpha: 1,   color: accentColor },
+    { r: 8,  alpha: 0.8, color: '#ffffff'   },
+    { r: 4,  alpha: 0.6, color: ballColor   },
+  ]
+  let flashAlpha = 1
+
+  return {
+    step(ctx, canvasW, canvasH) {
+      ctx.clearRect(0, 0, canvasW, canvasH)
+
+      // flash
+      if (flashAlpha > 0) {
+        ctx.save(); ctx.globalAlpha = flashAlpha; ctx.fillStyle = '#fff'
+        ctx.fillRect(0, 0, canvasW, canvasH); ctx.restore()
+        flashAlpha = Math.max(0, flashAlpha - 0.12)
+      }
+
+      // rings
+      for (const ring of rings) {
+        if (ring.alpha <= 0) continue
+        ctx.save(); ctx.globalAlpha = ring.alpha
+        ctx.strokeStyle = ring.color; ctx.lineWidth = 3
+        ctx.beginPath(); ctx.arc(gx, gy, ring.r, 0, Math.PI * 2); ctx.stroke()
+        ctx.restore()
+        ring.r += 6; ring.alpha -= 0.035
+      }
+
+      // particles
+      let alive = 0
+      for (const p of particles) {
+        if (p.alpha <= 0) continue
+        alive++
+        p.vy += 0.18; p.vx *= 0.97; p.vy *= 0.97
+        p.x += p.vx; p.y += p.vy
+        p.alpha -= 0.022; p.r *= 0.985
+        ctx.save(); ctx.globalAlpha = Math.max(0, p.alpha); ctx.fillStyle = p.color
+        if (p.shape === 'star') {
+          ctx.beginPath()
+          for (let i = 0; i < 5; i++) {
+            const a = (i / 5) * Math.PI * 2 - Math.PI / 2
+            const b = a + Math.PI / 5
+            ctx.lineTo(Math.cos(a) * p.r + p.x, Math.sin(a) * p.r + p.y)
+            ctx.lineTo(Math.cos(b) * p.r * 0.4 + p.x, Math.sin(b) * p.r * 0.4 + p.y)
+          }
+          ctx.closePath(); ctx.fill()
+        } else {
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill()
+        }
+        ctx.restore()
+      }
+
+      return alive > 0 || flashAlpha > 0 || rings.some(r => r.alpha > 0)
+    }
+  }
+}
+
 // ─── HiDPI canvas setup ──────────────────────────────────────────────────────
 
 export function setupCanvas(canvas: HTMLCanvasElement, cssW: number, cssH: number): CanvasRenderingContext2D {

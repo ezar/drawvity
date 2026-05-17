@@ -1,29 +1,18 @@
-import { toy, palette } from '../theme/toy'
+import { toy } from '../theme/toy'
 import { BALLS } from '../data/balls'
+import { STROKE_COLORS } from '../data/colors'
 import { useGameStore } from '../store/gameStore'
 import { useIsPortrait } from '../hooks/useIsPortrait'
+import { palette } from '../theme/toy'
 
 interface Props { onBack: () => void }
-
-const STROKE_COLORS = [
-  { id: 'ink',     hex: palette.ink,       name: 'Pencil ink' },
-  { id: 'primary', hex: palette.primary,   name: 'Coral marker' },
-  { id: 'second',  hex: palette.secondary, name: 'Mustard chalk' },
-  { id: 'third',   hex: palette.tertiary,  name: 'Cobalt pen' },
-  { id: 'accent',  hex: '#5BB390',         name: 'Mint liner' },
-  { id: 'rose',    hex: '#F4D8E4',         name: 'Rose pastel' },
-  { id: 'neon',    hex: '#A0FF00',         name: 'Neon glow' },
-  { id: 'rainbow', hex: 'linear-gradient(90deg,#E25C3B,#E8B73E,#5BB390,#2E5BB8)', name: 'Rainbow' },
-]
-
-const UNLOCK_AT_STARS = [0, 0, 0, 0, 10, 20, 30, 40]
 
 export function CollectionScreen({ onBack }: Props) {
   const portrait = useIsPortrait()
   const { unlockedBalls, progress } = useGameStore()
   const totalStarsAll = Object.values(progress).flatMap(p => p.stars).reduce((a, b) => a + b, 0)
   const unlockedColorIds = STROKE_COLORS
-    .filter((_, i) => totalStarsAll >= UNLOCK_AT_STARS[i])
+    .filter(c => totalStarsAll >= c.unlockStars)
     .map(c => c.id)
 
   return (
@@ -75,7 +64,7 @@ export function CollectionScreen({ onBack }: Props) {
               <div key={s.id} style={{ padding: 10, background: palette.paper, border: toy.border, borderRadius: toy.radius, boxShadow: toy.shadow, opacity: unlocked ? 1 : .5, textAlign: 'center' }}>
                 <div style={{ width: '100%', height: 32, borderRadius: toy.radius - 4, background: unlocked ? s.hex : 'rgba(31,26,20,.1)', marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {!unlocked && <span style={{ fontSize: 12 }}>🔒</span>}
-                  {!unlocked && <div style={{ fontFamily: 'JetBrains Mono', fontSize: 8, color: palette.inkSoft, marginLeft: 4 }}>{UNLOCK_AT_STARS[i]}★</div>}
+                  {!unlocked && <div style={{ fontFamily: 'JetBrains Mono', fontSize: 8, color: palette.inkSoft, marginLeft: 4 }}>{STROKE_COLORS[i]?.unlockStars}★</div>}
                 </div>
                 <div style={{ fontFamily: 'Nunito', fontSize: 10, color: palette.inkSoft, fontWeight: 600 }}>{s.name}</div>
               </div>

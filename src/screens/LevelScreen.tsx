@@ -9,6 +9,7 @@ import { WORLD_MAP } from '../data/worlds'
 import { BALL_MAP } from '../data/balls'
 import { getLevel } from '../data/levels'
 import { palette } from '../theme/toy'
+import { STROKE_COLORS } from '../data/colors'
 import type { Point } from '../types'
 
 interface Props {
@@ -18,7 +19,8 @@ interface Props {
 }
 
 export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
-  const { currentWorld, currentLevel, selectedBall, selectBall, recordResult } = useGameStore()
+  const { currentWorld, currentLevel, selectedBall, selectBall, selectedColorId, recordResult } = useGameStore()
+  const strokeColor = STROKE_COLORS.find(c => c.id === selectedColorId)?.hex ?? palette.ink
   const world = WORLD_MAP[currentWorld]
   const ball = BALL_MAP[selectedBall]
   const level = freeDraw
@@ -99,7 +101,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
           level={level}
           world={world}
           ball={ball}
-          strokeColor={palette.ink}
+          strokeColor={strokeColor}
           launching={launching}
           onWin={handleWin}
           onLoss={handleLoss}

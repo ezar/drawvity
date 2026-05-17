@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { toy, palette } from '../../theme/toy'
 import { useIsPortrait } from '../../hooks/useIsPortrait'
+import { playWin, playTap } from '../../engine/audio'
+import { hapticWin, hapticTap } from '../../hooks/useHaptic'
 
 interface Props {
   strokesUsed: number
@@ -35,9 +37,10 @@ export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext }: Props
   const stars = strokesUsed === 1 ? 3 : strokesUsed === 2 ? 2 : 1
 
   useEffect(() => {
-    const t1 = setTimeout(() => setShown(1), 250)
-    const t2 = setTimeout(() => setShown(2), 600)
-    const t3 = setTimeout(() => setShown(3), 950)
+    playWin(); hapticWin()
+    const t1 = setTimeout(() => { setShown(1); playTap() }, 250)
+    const t2 = setTimeout(() => { setShown(2); playTap() }, 600)
+    const t3 = setTimeout(() => { setShown(3); playTap() }, 950)
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
   }, [])
 
@@ -75,12 +78,16 @@ export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext }: Props
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-          <button onClick={onImprove} style={{ padding: '10px 18px', borderRadius: toy.radius, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 15, boxShadow: toy.shadow }}>
+          <motion.button whileTap={{ scale: 0.94 }}
+            onClick={() => { hapticTap(); playTap(); onImprove() }}
+            style={{ padding: '10px 18px', borderRadius: toy.radius, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 15, boxShadow: toy.shadow }}>
             Improve
-          </button>
-          <button onClick={onNext} style={{ padding: '10px 20px', borderRadius: toy.btnRadius, border: 'none', background: palette.primary, color: '#fff', cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 15, boxShadow: toy.shadow }}>
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.94 }}
+            onClick={() => { hapticTap(); playTap(); onNext() }}
+            style={{ padding: '10px 20px', borderRadius: toy.btnRadius, border: 'none', background: palette.primary, color: '#fff', cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 15, boxShadow: toy.shadow }}>
             Next level →
-          </button>
+          </motion.button>
         </div>
       </motion.div>
     </motion.div>

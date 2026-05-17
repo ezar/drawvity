@@ -1,6 +1,9 @@
+import { motion } from 'framer-motion'
 import { toy, palette } from '../theme/toy'
 import { StrokeCounter } from './StrokeCounter'
 import { useIsPortrait } from '../hooks/useIsPortrait'
+import { playTap } from '../engine/audio'
+import { hapticTap } from '../hooks/useHaptic'
 import type { WorldDef } from '../types'
 
 interface Props {
@@ -28,11 +31,15 @@ export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onB
     }}>
       {/* left: back + level name */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: 1 }}>
-        <button onClick={onBack} style={{
-          width: 34, height: 34, borderRadius: 999, border: toy.border,
-          background: btnBg, color: textColor, cursor: 'pointer', fontSize: 15,
-          boxShadow: toy.shadow, flexShrink: 0,
-        }}>←</button>
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => { hapticTap(); playTap(); onBack() }}
+          style={{
+            width: 34, height: 34, borderRadius: 999, border: toy.border,
+            background: btnBg, color: textColor, cursor: 'pointer', fontSize: 15,
+            boxShadow: toy.shadow, flexShrink: 0,
+          }}
+        >←</motion.button>
         <div style={{ lineHeight: 1.15, minWidth: 0, overflow: 'hidden' }}>
           <div style={{
             fontFamily: 'JetBrains Mono', fontSize: 9, opacity: .65,
@@ -53,11 +60,16 @@ export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onB
       {/* right: stroke counter + retry */}
       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
         <StrokeCounter max={strokesMax} used={strokesUsed} />
-        <button onClick={onRetry} title="Retry" style={{
-          width: 34, height: 34, borderRadius: 999, border: toy.border,
-          background: btnBg, color: textColor, cursor: 'pointer', fontSize: 14,
-          boxShadow: toy.shadow,
-        }}>↻</button>
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => { hapticTap(); playTap(); onRetry() }}
+          title="Retry"
+          style={{
+            width: 34, height: 34, borderRadius: 999, border: toy.border,
+            background: btnBg, color: textColor, cursor: 'pointer', fontSize: 14,
+            boxShadow: toy.shadow,
+          }}
+        >↻</motion.button>
       </div>
     </div>
   )
