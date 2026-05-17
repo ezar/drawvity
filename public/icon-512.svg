@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="100" fill="#FAF4E6"/>
+  <!-- ball -->
+  <circle cx="192" cy="296" r="96" fill="#E25C3B"/>
+  <circle cx="158" cy="260" r="28" fill="rgba(255,255,255,0.4)"/>
+  <circle cx="192" cy="296" r="96" fill="none" stroke="rgba(31,26,20,0.25)" stroke-width="5"/>
+  <!-- star -->
+  <polygon points="392,112 402,148 440,148 410,170 420,206 392,184 364,206 374,170 344,148 382,148" fill="#E8B73E" stroke="rgba(31,26,20,0.3)" stroke-width="4" stroke-linejoin="round"/>
+  <!-- path hint -->
+  <path d="M112 156 Q256 72 400 156" stroke="#1F1A14" stroke-width="10" stroke-dasharray="16 10" fill="none" stroke-linecap="round" opacity="0.18"/>
+</svg>
