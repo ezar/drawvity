@@ -53,7 +53,9 @@ export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onB
             fontSize: portrait ? 15 : 18,
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           }}>
-            Lvl {String(levelIndex + 1).padStart(2, '0')} · {levelName}
+            {portrait
+              ? `#${levelIndex + 1} ${levelName}`
+              : `Level ${String(levelIndex + 1).padStart(2, '0')} · ${levelName}`}
           </div>
         </div>
       </div>

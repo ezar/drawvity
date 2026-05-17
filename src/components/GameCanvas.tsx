@@ -20,6 +20,7 @@ interface Props {
   showTrajectory: boolean
   onWin: (strokesUsed: number) => void
   onLoss: () => void
+  onRequestLaunch: () => void   // triggered by tapping the spawn ball
   strokes: Point[][]
   setStrokes: (s: Point[][]) => void
 }
@@ -27,7 +28,7 @@ interface Props {
 export function GameCanvas({
   width, height, level, world, ball,
   strokeColor, launching, showTrajectory,
-  onWin, onLoss, strokes, setStrokes,
+  onWin, onLoss, onRequestLaunch, strokes, setStrokes,
 }: Props) {
   const staticRef = useRef<HTMLCanvasElement>(null)
   const dynamicRef = useRef<HTMLCanvasElement>(null)
@@ -46,7 +47,7 @@ export function GameCanvas({
       const traj = simulateTrajectory(level, strokes, ball, world, width, height, 280)
       drawTrajectory(ctx, traj, ball.color)
     }
-    drawBallSpawn(ctx, level.ballSpawn, width, height, ball.color, launching)
+    drawBallSpawn(ctx, level.ballSpawn, width, height, ball.color, launching, strokes.length > 0)
   }, [width, height, world, level, strokes, strokeColor, ball, launching, showTrajectory])
 
   // ── setup canvases ONLY on size change (avoids compounding ctx.scale)
@@ -163,9 +164,18 @@ export function GameCanvas({
   }
 
   const onPointerDown = (e: React.PointerEvent) => {
-    if (launching || strokes.length >= level.strokesMax) return
+    if (launching) return
     e.preventDefault()
-    drawingRef.current = [getPt(e)]
+    const pt = getPt(e)
+    // tap near spawn ball = launch shortcut (when strokes exist)
+    const spawnX = level.ballSpawn.x * width
+    const spawnY = level.ballSpawn.y * height
+    if (strokes.length > 0 && Math.hypot(pt.x - spawnX, pt.y - spawnY) < 32) {
+      onRequestLaunch()
+      return
+    }
+    if (strokes.length >= level.strokesMax) return
+    drawingRef.current = [pt]
   }
 
   const onPointerMove = (e: React.PointerEvent) => {

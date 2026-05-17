@@ -38,15 +38,16 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
   const [retryKey, setRetryKey] = useState(0)  // force GameCanvas remount on retry
 
   // Viewport-aware canvas size — updates on resize
+  // Portrait: BallBar has 2 rows (~138px); Landscape: 1 row (~88px)
   const hudTop = 56
-  const hudBottom = 96
+  const getHudBottom = () => window.innerWidth < window.innerHeight ? 138 : 96
   const [size, setSize] = useState(() => ({
     w: window.innerWidth,
-    h: window.innerHeight - hudTop - hudBottom,
+    h: window.innerHeight - hudTop - getHudBottom(),
   }))
 
   useEffect(() => {
-    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight - hudTop - hudBottom })
+    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight - hudTop - getHudBottom() })
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
   }, [])
@@ -135,6 +136,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
           strokeColor={strokeColor}
           launching={launching}
           showTrajectory={showTrajectory}
+          onRequestLaunch={() => { if (!launching && strokes.length > 0) setLaunching(true) }}
           onWin={handleWin}
           onLoss={handleLoss}
           strokes={strokes}
