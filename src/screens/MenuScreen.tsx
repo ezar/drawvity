@@ -87,7 +87,7 @@ export function MenuScreen({ onNav }: Props) {
           </button>
         ))}
         <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: palette.inkSoft, textAlign: 'center', opacity: .65, marginTop: 4 }}>
-          v{__BUILD_VERSION__}
+          v{__BUILD_VERSION__} · draw. watch. wonder.
         </div>
       </div>
     </div>
