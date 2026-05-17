@@ -7,7 +7,7 @@ import { WORLD_MAP } from '../data/worlds'
 
 describe('createPolylineBodies', () => {
   it('creates N-1 bodies for N points', () => {
-    const world = Matter.World.create()
+    const world = Matter.World.create({})
     const points = [
       { x: 0, y: 0 },
       { x: 100, y: 0 },
@@ -18,7 +18,7 @@ describe('createPolylineBodies', () => {
   })
 
   it('skips degenerate segments (length < 1)', () => {
-    const world = Matter.World.create()
+    const world = Matter.World.create({})
     const points = [
       { x: 0, y: 0 },
       { x: 0.1, y: 0 }, // too short
@@ -29,7 +29,7 @@ describe('createPolylineBodies', () => {
   })
 
   it('all bodies are static', () => {
-    const world = Matter.World.create()
+    const world = Matter.World.create({})
     const points = [{ x: 0, y: 0 }, { x: 100, y: 0 }, { x: 200, y: 100 }]
     createPolylineBodies(world, points, { isStatic: true })
     for (const body of world.bodies) {
