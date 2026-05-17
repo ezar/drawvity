@@ -19,17 +19,18 @@ export function WorldMapScreen({ onBack, onPickWorld }: Props) {
     <div style={{
       width: '100%', height: '100%', background: palette.paper,
       display: 'flex', flexDirection: 'column',
-      padding: '28px 40px 24px', gap: 16, overflow: 'hidden',
+      padding: portrait ? '20px 16px 16px' : '28px 40px 24px',
+      gap: portrait ? 12 : 16, overflow: 'hidden',
     }}>
       {/* header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-        <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: 999, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontSize: 18, boxShadow: toy.shadow }}>←</button>
-        <div style={{ flex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: 999, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontSize: 18, boxShadow: toy.shadow, flexShrink: 0 }}>←</button>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase', color: palette.inkSoft }}>choose a world</div>
-          <h2 style={{ fontFamily: 'Caprasimo, serif', fontSize: 38, fontWeight: 400, color: palette.ink, margin: 0, lineHeight: 1 }}>Where to today?</h2>
+          <h2 style={{ fontFamily: 'Caprasimo, serif', fontSize: portrait ? 28 : 38, fontWeight: 400, color: palette.ink, margin: 0, lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Where to today?</h2>
         </div>
-        <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, padding: '8px 14px', background: palette.paperDeep, borderRadius: 999, border: toy.border, color: palette.ink, display: 'flex', gap: 6 }}>
-          <span>★</span><span>{allStars}</span><span style={{ opacity: .4 }}>/ {maxStars}</span>
+        <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, padding: '6px 10px', background: palette.paperDeep, borderRadius: 999, border: toy.border, color: palette.ink, display: 'flex', gap: 4, flexShrink: 0 }}>
+          <span>★</span><span>{allStars}</span><span style={{ opacity: .4 }}>/{maxStars}</span>
         </div>
       </div>
 

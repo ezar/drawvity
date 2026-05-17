@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { toy, palette } from '../../theme/toy'
+import { useIsPortrait } from '../../hooks/useIsPortrait'
 
 interface Props {
   strokesUsed: number
@@ -29,6 +30,7 @@ function Star({ shown, color }: { shown: boolean; color: string }) {
 }
 
 export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext }: Props) {
+  const portrait = useIsPortrait()
   const [shown, setShown] = useState(0)
   const stars = strokesUsed === 1 ? 3 : strokesUsed === 2 ? 2 : 1
 
@@ -54,7 +56,8 @@ export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext }: Props
         transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         style={{
           background: palette.paper, border: toy.border, borderRadius: toy.radius * 1.4,
-          boxShadow: toy.shadow, padding: '32px 32px 28px',
+          boxShadow: toy.shadow,
+          padding: portrait ? '24px 20px 20px' : '32px 32px 28px',
           maxWidth: 380, width: '100%', textAlign: 'center',
         }}
       >
@@ -68,7 +71,7 @@ export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext }: Props
         </div>
 
         <div style={{ fontFamily: 'Nunito', fontSize: 13, color: palette.inkSoft, marginBottom: 22 }}>
-          {stars === 3 ? 'Perfect — 1 stroke!' : `${strokesUsed} of ${strokesMax} strokes used`}
+          {stars === 3 ? 'Perfect — 1 stroke!' : isFinite(strokesMax) ? `${strokesUsed} of ${strokesMax} strokes used` : `${strokesUsed} stroke${strokesUsed !== 1 ? 's' : ''} used`}
         </div>
 
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
