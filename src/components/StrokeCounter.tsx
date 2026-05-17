@@ -6,6 +6,22 @@ interface Props {
 }
 
 export function StrokeCounter({ max, used }: Props) {
+  // free draw has infinite strokes — show count only
+  if (!isFinite(max)) {
+    return (
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: 8,
+        padding: '8px 14px',
+        background: palette.paper,
+        border: toy.border, borderRadius: 999,
+        boxShadow: toy.shadow,
+      }}>
+        <span style={{ fontFamily: 'JetBrains Mono', fontSize: 11, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase', opacity: .65, color: palette.ink }}>strokes</span>
+        <span style={{ fontFamily: 'JetBrains Mono', fontSize: 13, fontWeight: 700, color: palette.ink }}>{used}</span>
+      </div>
+    )
+  }
+
   return (
     <div style={{
       display: 'inline-flex', alignItems: 'center', gap: 8,

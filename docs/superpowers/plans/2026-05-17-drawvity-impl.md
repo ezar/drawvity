@@ -440,7 +440,7 @@ npm test -- gameStore
 
 Expected: 5 tests passing.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/store/ src/test-setup.ts
@@ -448,3 +448,66 @@ git commit -m "feat: Zustand game store with persist and unlock logic (TDD)"
 ```
 
 ---
+
+## Task 4: Static Data ✅
+
+`src/data/worlds.ts`, `src/data/balls.ts`, `src/data/levels/world-{1-4}-*.ts`, `src/data/levels/index.ts`
+
+All 4 worlds, 6 balls, 40 levels (10 per world) implemented with normalized obstacle coordinates. Committed in 4 separate commits.
+
+## Task 5: Physics Engine ✅
+
+`src/engine/physics.ts` + `src/engine/physics.test.ts`
+
+`createPolylineBodies` converts stroke/obstacle point arrays to static Matter.js rectangle bodies. `createPhysicsWorld` builds a full engine per launch. 6 tests, TDD.
+
+## Task 6: Canvas Renderer ✅
+
+`src/engine/renderer.ts`
+
+Draws: world backgrounds (graph/metal/stone/stars patterns), pre-placed obstacles, player strokes, goal star with pulse, ball + trail, ball spawn indicator. HiDPI via `setupCanvas`.
+
+## Task 7: GameCanvas Component ✅
+
+`src/components/GameCanvas.tsx`
+
+Two stacked `<canvas>` elements. Static layer: world BG + obstacles + strokes (redraws on stroke change). Dynamic layer: ball + trail + goal star (RAF loop). Setup separated from render to avoid compounding `ctx.scale`. Pointer events capture freehand drawing.
+
+## Task 8: HUD + BallBar + StrokeCounter ✅
+
+`src/components/HUD.tsx`, `src/components/BallBar.tsx`, `src/components/StrokeCounter.tsx`
+
+HUD: top bar with back button, level name, stroke counter, retry. BallBar: ball selector chips + Launch button with pulse animation. StrokeCounter handles `Infinity` for free draw mode.
+
+## Task 9: Win/Loss Overlays ✅
+
+`src/screens/overlays/WinOverlay.tsx`, `src/screens/overlays/LossOverlay.tsx`
+
+Framer Motion spring pop animation. Win: staggered 3-star reveal, stroke count stats. Loss: sad ball face, retry/map buttons.
+
+## Task 10: LevelScreen ✅
+
+`src/screens/LevelScreen.tsx`
+
+Assembles GameCanvas + HUD + BallBar + overlays. Handles win/loss callbacks, retry (remounts GameCanvas via key), records stars to store. Resize-aware canvas size via `useEffect`. Free draw mode suppresses overlays and auto-resets.
+
+## Task 11: Menu, WorldMap, Collection Screens ✅
+
+`src/screens/MenuScreen.tsx`, `src/screens/WorldMapScreen.tsx`, `src/screens/CollectionScreen.tsx`
+
+All three screens responsive (portrait/landscape) via `useIsPortrait` hook. WorldMap shows level dots, locked world overlays, star totals. Collection shows balls + stroke colors with unlock thresholds.
+
+## Task 12: App Routing ✅
+
+`src/App.tsx`
+
+`AnimatePresence` with `mode="wait"` for slide transitions between screens. Level keyed by `world+index` to force remount on world/level change.
+
+## Task 13: CI + GitHub Pages ✅
+
+`.github/workflows/ci.yml` — typecheck → lint → test → build on every push/PR.
+`.github/workflows/pages.yml` — build + deploy to GitHub Pages on `main` push.
+`vite.config.ts` base set to `/drawvity/`.
+
+**Activate Pages:** GitHub repo → Settings → Pages → Source → GitHub Actions.
+**Live URL:** `https://ezar.github.io/drawvity/`

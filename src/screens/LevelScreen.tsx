@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { GameCanvas } from '../components/GameCanvas'
 import { HUD } from '../components/HUD'
 import { BallBar } from '../components/BallBar'
@@ -31,13 +31,19 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
   const [strokesUsedOnWin, setStrokesUsedOnWin] = useState(0)
   const [retryKey, setRetryKey] = useState(0)  // force GameCanvas remount on retry
 
-  // Viewport-aware canvas size
+  // Viewport-aware canvas size — updates on resize
   const hudTop = 56
   const hudBottom = 96
-  const [size] = useState(() => ({
+  const [size, setSize] = useState(() => ({
     w: window.innerWidth,
     h: window.innerHeight - hudTop - hudBottom,
   }))
+
+  useEffect(() => {
+    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight - hudTop - hudBottom })
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const handleWin = useCallback((strokesUsed: number) => {
     if (!freeDraw) {
@@ -51,8 +57,14 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
 
   const handleLoss = useCallback(() => {
     setLaunching(false)
-    setOverlay('loss')
-  }, [])
+    if (freeDraw) {
+      // free draw: silently reset so player can try again without modal
+      setStrokes([])
+      setRetryKey((k) => k + 1)
+    } else {
+      setOverlay('loss')
+    }
+  }, [freeDraw])
 
   const retry = () => {
     setRetryKey((k) => k + 1)
@@ -107,7 +119,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
               color: world.id === 'space' ? 'rgba(242,235,218,.45)' : 'rgba(31,26,20,.3)',
               transform: 'rotate(-1.5deg)', userSelect: 'none',
             }}>
-              ✎ Draw a path to the star
+              {freeDraw ? '✎ Draw anything · then launch' : '✎ Draw a path to the star'}
             </div>
           </div>
         )}

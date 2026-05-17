@@ -1,6 +1,7 @@
 import { toy, palette } from '../theme/toy'
 import { WORLDS } from '../data/worlds'
 import { useGameStore } from '../store/gameStore'
+import { useIsPortrait } from '../hooks/useIsPortrait'
 import type { WorldId } from '../types'
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function WorldMapScreen({ onBack, onPickWorld }: Props) {
+  const portrait = useIsPortrait()
   const { progress, isWorldUnlocked, totalStars } = useGameStore()
   const allStars = WORLDS.reduce((a, w) => a + totalStars(w.id), 0)
   const maxStars = WORLDS.reduce((a, w) => a + w.levels * 3, 0)
@@ -32,7 +34,7 @@ export function WorldMapScreen({ onBack, onPickWorld }: Props) {
       </div>
 
       {/* world grid */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gridTemplateRows: 'repeat(2, 1fr)', gap: 14, minHeight: 0 }}>
+      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: portrait ? '1fr' : 'repeat(2, 1fr)', gap: 14, minHeight: 0, overflowY: portrait ? 'auto' : 'hidden' }}>
         {WORLDS.map((w, idx) => {
           const unlocked = isWorldUnlocked(w.id)
           const stars = progress[w.id]?.stars ?? []

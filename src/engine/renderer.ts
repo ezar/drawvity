@@ -222,6 +222,51 @@ export function drawBallAndTrail(
 
 // ─── HiDPI canvas setup ──────────────────────────────────────────────────────
 
+// ─── Ball spawn indicator ────────────────────────────────────────────────────
+
+export function drawBallSpawn(
+  ctx: CanvasRenderingContext2D,
+  spawn: { x: number; y: number },
+  canvasW: number,
+  canvasH: number,
+  ballColor: string,
+  launching: boolean
+): void {
+  if (launching) return
+  const sx = spawn.x * canvasW
+  const sy = spawn.y * canvasH
+  const r = 12
+
+  ctx.save()
+
+  // outer dashed ring
+  ctx.setLineDash([4, 3])
+  ctx.strokeStyle = 'rgba(31,26,20,.35)'
+  ctx.lineWidth = 1.5
+  ctx.beginPath(); ctx.arc(sx, sy, r + 5, 0, Math.PI * 2); ctx.stroke()
+  ctx.setLineDash([])
+
+  // ball preview (semi-transparent)
+  ctx.globalAlpha = 0.55
+  ctx.fillStyle = ballColor
+  ctx.beginPath(); ctx.arc(sx, sy, r, 0, Math.PI * 2); ctx.fill()
+  ctx.globalAlpha = 1
+
+  // highlight
+  ctx.fillStyle = 'rgba(255,255,255,.4)'
+  ctx.beginPath(); ctx.arc(sx - r * 0.3, sy - r * 0.3, r * 0.32, 0, Math.PI * 2); ctx.fill()
+
+  // drop arrow below
+  ctx.fillStyle = 'rgba(31,26,20,.4)'
+  ctx.font = '11px JetBrains Mono, monospace'
+  ctx.textAlign = 'center'
+  ctx.fillText('↓', sx, sy + r + 14)
+
+  ctx.restore()
+}
+
+// ─── HiDPI canvas setup ──────────────────────────────────────────────────────
+
 export function setupCanvas(canvas: HTMLCanvasElement, cssW: number, cssH: number): CanvasRenderingContext2D {
   const dpr = Math.min(window.devicePixelRatio || 1, 2)
   canvas.width = cssW * dpr

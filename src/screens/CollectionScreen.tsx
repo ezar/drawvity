@@ -1,6 +1,7 @@
 import { toy, palette } from '../theme/toy'
 import { BALLS } from '../data/balls'
 import { useGameStore } from '../store/gameStore'
+import { useIsPortrait } from '../hooks/useIsPortrait'
 
 interface Props { onBack: () => void }
 
@@ -18,6 +19,7 @@ const STROKE_COLORS = [
 const UNLOCK_AT_STARS = [0, 0, 0, 0, 10, 20, 30, 40]
 
 export function CollectionScreen({ onBack }: Props) {
+  const portrait = useIsPortrait()
   const { unlockedBalls, progress } = useGameStore()
   const totalStarsAll = Object.values(progress).flatMap(p => p.stars).reduce((a, b) => a + b, 0)
   const unlockedColorIds = STROKE_COLORS
@@ -42,7 +44,7 @@ export function CollectionScreen({ onBack }: Props) {
           <div style={{ fontFamily: 'Caprasimo, serif', fontSize: 22, color: palette.ink }}>Balls</div>
           <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: palette.inkSoft }}>{unlockedBalls.length} / {BALLS.length}</div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: portrait ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: 12 }}>
           {BALLS.map((b) => {
             const unlocked = unlockedBalls.includes(b.id)
             return (
@@ -65,7 +67,7 @@ export function CollectionScreen({ onBack }: Props) {
           <div style={{ fontFamily: 'Caprasimo, serif', fontSize: 22, color: palette.ink }}>Stroke colors</div>
           <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: palette.inkSoft }}>{unlockedColorIds.length} / {STROKE_COLORS.length}</div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: portrait ? 'repeat(4, 1fr)' : 'repeat(8, 1fr)', gap: 10 }}>
           {STROKE_COLORS.map((s, i) => {
             const unlocked = unlockedColorIds.includes(s.id)
             return (
