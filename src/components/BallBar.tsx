@@ -16,7 +16,8 @@ interface Props {
   onLaunch: () => void
 }
 
-const CHIP_SIZE = 44  // uniform size on all breakpoints
+const BALL_SIZE  = 40
+const COLOR_SIZE = 26
 
 export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launching, onLaunch }: Props) {
   const { unlockedBalls, selectedColorId, selectColor, progress } = useGameStore()
@@ -27,12 +28,11 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
   const panelBg   = isSpace ? 'rgba(255,255,255,.08)' : palette.paper
 
   const LABEL: React.CSSProperties = {
-    fontFamily: 'Caprasimo, serif',
-    fontSize: 16,
-    color: textColor,
-    lineHeight: 1,
-    marginBottom: 6,
-    paddingLeft: 4,
+    fontFamily: 'JetBrains Mono',
+    fontSize: 10, fontWeight: 700,
+    letterSpacing: '.12em', textTransform: 'uppercase',
+    color: textColor, opacity: .55,
+    lineHeight: 1, marginBottom: 5, paddingLeft: 4,
     whiteSpace: 'nowrap',
   }
 
@@ -68,7 +68,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
                 disabled={!unlocked}
                 title={b.name}
                 style={{
-                  width: CHIP_SIZE, height: CHIP_SIZE, flexShrink: 0,
+                  width: BALL_SIZE, height: BALL_SIZE, flexShrink: 0,
                   borderRadius: 999, border: 'none',
                   background: unlocked ? b.color : 'rgba(31,26,20,.08)',
                   cursor: unlocked ? 'pointer' : 'not-allowed',
@@ -99,14 +99,14 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
                 whileTap={{ scale: 0.88 }}
                 onClick={() => { hapticTap(); playTap(); selectColor(c.id) }}
                 style={{
-                  width: CHIP_SIZE, height: CHIP_SIZE, flexShrink: 0,
+                  width: COLOR_SIZE, height: COLOR_SIZE, flexShrink: 0,
                   borderRadius: 999, border: 'none',
                   background: c.hex,
                   boxShadow: sel
-                    ? `0 0 0 3px ${palette.paper}, 0 0 0 5px ${palette.ink}`
-                    : '0 1px 4px rgba(31,26,20,.22)',
+                    ? `0 0 0 2px ${palette.paper}, 0 0 0 4px ${palette.ink}`
+                    : '0 1px 3px rgba(31,26,20,.2)',
                   cursor: 'pointer',
-                  transform: sel ? 'translateY(-3px)' : 'none',
+                  transform: sel ? 'translateY(-2px) scale(1.15)' : 'none',
                   transition: 'transform .12s ease, box-shadow .12s ease',
                 }}
               />
@@ -126,7 +126,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
           onClick={() => { if (!canLaunch || launching) return; hapticLaunch(); onLaunch() }}
           disabled={!canLaunch || launching}
           style={{
-            height: CHIP_SIZE + 14,
+            height: BALL_SIZE + 14,
             padding: '0 24px',
             background: canLaunch && !launching ? palette.primary : 'rgba(31,26,20,.18)',
             color: '#fff', border: 'none', borderRadius: 999,
