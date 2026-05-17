@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 import type { Level, WorldDef, BallDef, Point } from '../types'
-import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail, drawBallSpawn } from '../engine/renderer'
+import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail, drawBallSpawn, createWinParticles } from '../engine/renderer'
 import { createPhysicsWorld, stepEngine, destroyPhysicsWorld } from '../engine/physics'
 import { playDraw, playLaunch, playBounce } from '../engine/audio'
 import Matter from 'matter-js'
@@ -100,19 +100,24 @@ export function GameCanvas({
       if (Math.hypot(x - goalX, y - goalY) < BALL_RADIUS + WIN_THRESHOLD) {
         done = true
         destroyPhysicsWorld(engine)
-        // draw explosion on static canvas
-        const sCtx = staticRef.current?.getContext('2d')
-        if (sCtx) {
-          sCtx.fillStyle = world.accent
-          for (let k = 0; k < 24; k++) {
-            const a = (k / 24) * Math.PI * 2
-            const r = 28 + Math.random() * 18
-            sCtx.beginPath()
-            sCtx.arc(goalX + Math.cos(a) * r, goalY + Math.sin(a) * r, 5, 0, Math.PI * 2)
-            sCtx.fill()
+        // animated particle explosion on dynamic canvas
+        const dynCtx = dynamicRef.current?.getContext('2d')
+        if (dynCtx) {
+          const particles = createWinParticles(goalX, goalY, world.accent, ball.color)
+          let winRaf = 0
+          const winLoop = () => {
+            const continuing = particles.step(dynCtx, width, height)
+            if (continuing) {
+              winRaf = requestAnimationFrame(winLoop)
+            } else {
+              cancelAnimationFrame(winRaf)
+              onWin(strokes.length)
+            }
           }
+          winRaf = requestAnimationFrame(winLoop)
+        } else {
+          setTimeout(() => onWin(strokes.length), 350)
         }
-        setTimeout(() => onWin(strokes.length), 350)
         return
       }
 
