@@ -2,6 +2,8 @@ import { useRef, useEffect, useCallback } from 'react'
 import type { Level, WorldDef, BallDef, Point } from '../types'
 import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail, drawBallSpawn } from '../engine/renderer'
 import { createPhysicsWorld, stepEngine, destroyPhysicsWorld } from '../engine/physics'
+import { playDraw, playLaunch, playBounce } from '../engine/audio'
+import Matter from 'matter-js'
 import type { TrailPoint } from '../engine/renderer'
 
 const BALL_RADIUS = 12
@@ -77,10 +79,17 @@ export function GameCanvas({
     const goalX = level.goal.x * width
     const goalY = level.goal.y * height
 
+    playLaunch()
     const { engine, ballBody } = createPhysicsWorld(level, strokes, ball, world, width, height)
     const trail: TrailPoint[] = []
     let frames = 0
     let done = false
+
+    // bounce sounds via collision events
+    Matter.Events.on(engine, 'collisionStart', () => {
+      if (done) return
+      playBounce(ballBody.speed)
+    })
 
     const tick = () => {
       if (done) return
@@ -151,6 +160,7 @@ export function GameCanvas({
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drawingRef.current) return
     e.preventDefault()
+    playDraw()
     const pt = getPt(e)
     const pts = drawingRef.current
     const last = pts[pts.length - 1]

@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { toy, palette } from '../../theme/toy'
+import { playLoss } from '../../engine/audio'
 
 interface Props {
   onRetry: () => void
@@ -7,6 +9,7 @@ interface Props {
 }
 
 export function LossOverlay({ onRetry, onMap }: Props) {
+  useEffect(() => { playLoss() }, [])
   return (
     <motion.div
       initial={{ opacity: 0 }} animate={{ opacity: 1 }}

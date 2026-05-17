@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { toy, palette } from '../../theme/toy'
 import { useIsPortrait } from '../../hooks/useIsPortrait'
+import { playWin } from '../../engine/audio'
 
 interface Props {
   strokesUsed: number
@@ -35,6 +36,7 @@ export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext }: Props
   const stars = strokesUsed === 1 ? 3 : strokesUsed === 2 ? 2 : 1
 
   useEffect(() => {
+    playWin()
     const t1 = setTimeout(() => setShown(1), 250)
     const t2 = setTimeout(() => setShown(2), 600)
     const t3 = setTimeout(() => setShown(3), 950)
