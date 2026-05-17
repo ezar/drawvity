@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { toy, palette } from '../theme/toy'
 import { BALLS } from '../data/balls'
 import { STROKE_COLORS } from '../data/colors'
@@ -5,6 +6,7 @@ import { useIsPortrait } from '../hooks/useIsPortrait'
 import type { BallId, WorldDef } from '../types'
 import { useGameStore } from '../store/gameStore'
 import { playTap } from '../engine/audio'
+import { hapticTap, hapticLaunch } from '../hooks/useHaptic'
 
 interface Props {
   selectedBall: BallId
@@ -52,9 +54,10 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
           const unlocked = unlockedBalls.includes(b.id)
           const selected = b.id === selectedBall
           return (
-            <button
+            <motion.button
               key={b.id}
-              onClick={() => unlocked && onSelectBall(b.id)}
+              whileTap={unlocked ? { scale: 0.88 } : {}}
+              onClick={() => { if (!unlocked) return; hapticTap(); playTap(); onSelectBall(b.id) }}
               disabled={!unlocked}
               title={b.name}
               style={{
@@ -71,7 +74,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
               }}
             >
               {!unlocked && <span style={{ fontSize: 16 }}>🔒</span>}
-            </button>
+            </motion.button>
           )
         })}
       </div>
@@ -123,8 +126,9 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
       {portrait && <div style={{ flex: 1 }} />}
 
       {/* launch button */}
-      <button
-        onClick={() => canLaunch && !launching && onLaunch()}
+      <motion.button
+        whileTap={canLaunch && !launching ? { scale: 0.93 } : {}}
+        onClick={() => { if (!canLaunch || launching) return; hapticLaunch(); onLaunch() }}
         disabled={!canLaunch || launching}
         style={{
           padding: portrait ? '12px 20px' : '14px 32px',
@@ -141,7 +145,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
         }}
       >
         {launching ? '…' : 'Launch ↓'}
-      </button>
+      </motion.button>
 
       <style>{`@keyframes dp-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }`}</style>
     </div>

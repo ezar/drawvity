@@ -1,7 +1,10 @@
+import { motion } from 'framer-motion'
 import { toy, palette } from '../theme/toy'
 import { WORLDS } from '../data/worlds'
 import { useGameStore } from '../store/gameStore'
 import { useIsPortrait } from '../hooks/useIsPortrait'
+import { playTap } from '../engine/audio'
+import { hapticTap } from '../hooks/useHaptic'
 import type { WorldId } from '../types'
 
 interface Props {
@@ -29,7 +32,7 @@ export function WorldMapScreen({ onBack, onPickWorld }: Props) {
     }}>
       {/* header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <button onClick={onBack} style={{ width: 40, height: 40, borderRadius: 999, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontSize: 18, boxShadow: toy.shadow, flexShrink: 0 }}>←</button>
+        <motion.button whileTap={{ scale: 0.88 }} onClick={() => { hapticTap(); playTap(); onBack() }} style={{ width: 40, height: 40, borderRadius: 999, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontSize: 18, boxShadow: toy.shadow, flexShrink: 0 }}>←</motion.button>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 600, letterSpacing: '.14em', textTransform: 'uppercase', color: palette.inkSoft }}>choose a world</div>
           <h2 style={{ fontFamily: 'Caprasimo, serif', fontSize: portrait ? 28 : 38, fontWeight: 400, color: palette.ink, margin: 0, lineHeight: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Where to today?</h2>
@@ -40,15 +43,21 @@ export function WorldMapScreen({ onBack, onPickWorld }: Props) {
       </div>
 
       {/* world grid */}
-      <div style={{ flex: 1, display: 'grid', gridTemplateColumns: portrait ? '1fr' : 'repeat(2, 1fr)', gap: 14, minHeight: 0, overflowY: portrait ? 'auto' : 'hidden' }}>
+      <motion.div
+        initial="hidden" animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.07 } } }}
+        style={{ flex: 1, display: 'grid', gridTemplateColumns: portrait ? '1fr' : 'repeat(2, 1fr)', gap: 14, minHeight: 0, overflowY: portrait ? 'auto' : 'hidden' }}
+      >
         {WORLDS.map((w, idx) => {
           const unlocked = isWorldUnlocked(w.id)
           const stars = progress[w.id]?.stars ?? []
           const completed = stars.filter(s => s > 0).length
           return (
-            <button
+            <motion.button
               key={w.id}
-              onClick={() => unlocked && onPickWorld(w.id)}
+              variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+              whileTap={unlocked ? { scale: 0.97 } : {}}
+              onClick={() => { if (!unlocked) return; hapticTap(); playTap(); onPickWorld(w.id) }}
               disabled={!unlocked}
               style={{
                 position: 'relative', overflow: 'hidden', cursor: unlocked ? 'pointer' : 'not-allowed',
@@ -92,10 +101,10 @@ export function WorldMapScreen({ onBack, onPickWorld }: Props) {
                   🔒 Locked
                 </div>
               )}
-            </button>
+            </motion.button>
           )
         })}
-      </div>
+      </motion.div>
     </div>
     </div>
   )

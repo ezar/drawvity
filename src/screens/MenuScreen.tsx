@@ -1,5 +1,8 @@
+import { motion } from 'framer-motion'
 import { toy, palette } from '../theme/toy'
 import { useIsPortrait } from '../hooks/useIsPortrait'
+import { playTap } from '../engine/audio'
+import { hapticTap } from '../hooks/useHaptic'
 import type { ScreenId } from '../types'
 
 interface Props { onNav: (s: ScreenId) => void }
@@ -56,26 +59,31 @@ export function MenuScreen({ onNav }: Props) {
       </div>
 
       {/* nav cards */}
-      <div style={{
-        flex: portrait ? '0 0 auto' : 1,
-        display: 'flex', flexDirection: 'column',
-        gap: 12, width: portrait ? '100%' : 'auto',
-        maxWidth: portrait ? 380 : 420,
-      }}>
+      <motion.div
+        initial="hidden" animate="visible"
+        variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+        style={{
+          flex: portrait ? '0 0 auto' : 1,
+          display: 'flex', flexDirection: 'column',
+          gap: 12, width: portrait ? '100%' : 'auto',
+          maxWidth: portrait ? 380 : 420,
+        }}
+      >
         {CARDS.map((c) => (
-          <button
+          <motion.button
             key={c.id}
-            onClick={() => onNav(c.id)}
+            variants={{ hidden: { opacity: 0, x: 24 }, visible: { opacity: 1, x: 0 } }}
+            whileHover={{ x: 4 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => { hapticTap(); playTap(); onNav(c.id) }}
             style={{
               display: 'flex', alignItems: 'center', gap: 16,
               padding: portrait ? '16px 18px' : '20px 22px',
               background: palette.paper, color: palette.ink,
               border: toy.border, borderRadius: toy.radius,
               boxShadow: toy.shadow, cursor: 'pointer', textAlign: 'left',
-              transition: 'transform .14s ease', fontFamily: 'Nunito',
+              fontFamily: 'Nunito',
             }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateX(4px)' }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'none' }}
           >
             <div style={{
               width: portrait ? 44 : 52, height: portrait ? 44 : 52,
@@ -89,12 +97,15 @@ export function MenuScreen({ onNav }: Props) {
               <div style={{ fontSize: 11, color: palette.inkSoft, marginTop: 4, fontFamily: 'JetBrains Mono', letterSpacing: '.08em', textTransform: 'uppercase' }}>{c.desc}</div>
             </div>
             <div style={{ fontSize: 16, color: palette.inkSoft }}>→</div>
-          </button>
+          </motion.button>
         ))}
-        <div style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: palette.inkSoft, textAlign: 'center', opacity: .65, marginTop: 4 }}>
+        <motion.div
+          variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
+          style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: palette.inkSoft, textAlign: 'center', opacity: .65, marginTop: 4 }}
+        >
           v{__BUILD_VERSION__} · draw. watch. wonder.
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </div>
     </div>
   )
