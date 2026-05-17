@@ -1,6 +1,9 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { setAudioEnabled } from '../engine/audio'
 import type { WorldId, BallId, ScreenId, Progress, Difficulty } from '../types'
+
+export interface UnlockToast { icon: string; name: string; detail: string }
 
 const WORLD_ORDER: WorldId[] = ['lab', 'factory', 'castle', 'space']
 const UNLOCK_THRESHOLD = 15
@@ -17,6 +20,8 @@ const initialData = {
   selectedColorId: 'ink' as string,
   difficulty: 'medium' as Difficulty,
   hasSeenOnboarding: false,
+  audioEnabled: true,
+  unlockToast: null as UnlockToast | null,
   progress: {
     lab:     emptyProgress(),
     factory: emptyProgress(),
@@ -38,6 +43,8 @@ interface GameState {
   unlockedBalls: BallId[]
   unlockedColors: string[]
   hasSeenOnboarding: boolean
+  audioEnabled: boolean
+  unlockToast: UnlockToast | null
 
   totalStars: (world: WorldId) => number
   isWorldUnlocked: (world: WorldId) => boolean
@@ -48,8 +55,10 @@ interface GameState {
   selectBall: (b: BallId) => void
   selectColor: (id: string) => void
   setDifficulty: (d: Difficulty) => void
+  setAudio: (enabled: boolean) => void
   recordResult: (world: WorldId, level: number, stars: number) => void
   setSeenOnboarding: () => void
+  clearUnlockToast: () => void
   getInitialState: () => typeof initialData
 }
 
@@ -71,6 +80,8 @@ export const useGameStore = create<GameState>()(
       },
 
       setSeenOnboarding: () => set({ hasSeenOnboarding: true }),
+      clearUnlockToast: () => set({ unlockToast: null }),
+      setAudio: (enabled) => { setAudioEnabled(enabled); set({ audioEnabled: enabled }) },
       setScreen: (screen) => set({ screen }),
       setWorld: (currentWorld) => set({ currentWorld }),
       setLevel: (currentLevel) => set({ currentLevel }),
@@ -93,9 +104,16 @@ export const useGameStore = create<GameState>()(
           .flatMap((p) => p.stars)
           .reduce((a, b) => a + b, 0)
         const unlocked = [...get().unlockedBalls]
-        if (total >= 20 && !unlocked.includes('magnet')) unlocked.push('magnet')
-        if (total >= 40 && !unlocked.includes('comet')) unlocked.push('comet')
-        set({ unlockedBalls: unlocked })
+        let toast: UnlockToast | null = null
+        if (total >= 20 && !unlocked.includes('magnet')) {
+          unlocked.push('magnet')
+          toast = { icon: '🧲', name: 'Magnet Ball', detail: 'Pulls toward surfaces' }
+        }
+        if (total >= 40 && !unlocked.includes('comet')) {
+          unlocked.push('comet')
+          toast = { icon: '☄️', name: 'Comet Ball', detail: 'Fast & fiery trail' }
+        }
+        set({ unlockedBalls: unlocked, ...(toast ? { unlockToast: toast } : {}) })
       },
     }),
     {
@@ -108,6 +126,7 @@ export const useGameStore = create<GameState>()(
         selectedColorId:    s.selectedColorId,
         difficulty:         s.difficulty,
         hasSeenOnboarding:  s.hasSeenOnboarding,
+        audioEnabled:       s.audioEnabled,
       }),
     }
   )

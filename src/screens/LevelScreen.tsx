@@ -52,6 +52,23 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
+  // ── Keyboard shortcuts ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if ((e.code === 'Space' || e.code === 'Enter') && !e.repeat) {
+        e.preventDefault()
+        if (strokes.length > 0 && !launching && overlay === null) setLaunching(true)
+      } else if ((e.code === 'KeyZ') && !e.repeat) {
+        if (strokes.length > 0 && !launching) setStrokes(strokes.slice(0, -1))
+      } else if (e.code === 'Escape') {
+        if (overlay) { setOverlay(null) } else { onBack() }
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [strokes, launching, overlay, onBack])
+
   const handleWin = useCallback((strokesUsed: number) => {
     if (!freeDraw) {
       const stars = strokesUsed === 1 ? 3 : strokesUsed === 2 ? 2 : 1

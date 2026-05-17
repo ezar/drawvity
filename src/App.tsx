@@ -5,6 +5,8 @@ import { WorldMapScreen } from './screens/WorldMapScreen'
 import { LevelScreen } from './screens/LevelScreen'
 import { CollectionScreen } from './screens/CollectionScreen'
 import { LevelEditorScreen } from './screens/LevelEditorScreen'
+import { UnlockToast } from './components/UnlockToast'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import type { WorldId } from './types'
 
 const slide = {
@@ -38,6 +40,7 @@ export default function App() {
   }
 
   return (
+    <ErrorBoundary>
     <div style={{ position: 'fixed', inset: 0, overflow: 'hidden' }}>
       <AnimatePresence mode="wait">
         {screen === 'menu' && (
@@ -76,6 +79,8 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+      <UnlockToast />
     </div>
+    </ErrorBoundary>
   )
 }

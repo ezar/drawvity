@@ -25,7 +25,7 @@ const DIFFICULTIES: { id: Difficulty; label: string; desc: string }[] = [
 
 export function MenuScreen({ onNav }: Props) {
   const portrait = useIsPortrait()
-  const { difficulty, setDifficulty, hasSeenOnboarding, setSeenOnboarding } = useGameStore()
+  const { difficulty, setDifficulty, hasSeenOnboarding, setSeenOnboarding, audioEnabled, setAudio } = useGameStore()
   // auto-show on first launch; user can re-open via "?" button
   const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding)
 
@@ -156,6 +156,18 @@ export function MenuScreen({ onNav }: Props) {
           <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: palette.inkSoft, opacity: .65 }}>
             v{__BUILD_VERSION__} · draw. watch. wonder.
           </span>
+          <motion.button
+            whileTap={{ scale: 0.88 }}
+            onClick={() => { hapticTap(); setAudio(!audioEnabled) }}
+            title={audioEnabled ? 'Mute sound' : 'Unmute sound'}
+            style={{
+              width: 22, height: 22, borderRadius: 999,
+              border: toy.border, background: palette.paper,
+              color: palette.inkSoft, cursor: 'pointer',
+              fontSize: 13, boxShadow: toy.shadow,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >{audioEnabled ? '🔊' : '🔇'}</motion.button>
           <motion.button
             whileTap={{ scale: 0.88 }}
             onClick={() => { hapticTap(); playTap(); setShowOnboarding(true) }}

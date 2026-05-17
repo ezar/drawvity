@@ -1,14 +1,34 @@
 // Procedural Web Audio — no audio files needed
 
 let _ctx: AudioContext | null = null
+let _master: GainNode | null = null
 
 function ctx(): AudioContext | null {
   if (typeof window === 'undefined') return null
   if (!_ctx) {
     try { _ctx = new AudioContext() } catch { return null }
+    _master = _ctx.createGain()
+    _master.connect(_ctx.destination)
   }
   if (_ctx.state === 'suspended') _ctx.resume()
   return _ctx
+}
+
+function out(): AudioNode {
+  return _master!
+}
+
+/** Toggle global audio. Call with false to mute all sounds. */
+export function setAudioEnabled(enabled: boolean): void {
+  if (_master) _master.gain.value = enabled ? 1 : 0
+  // if context not yet created, store the intent so first sound respects it
+  _pendingEnabled = enabled
+}
+let _pendingEnabled = true
+
+// Apply pending mute state after context creation
+function applyPending() {
+  if (_master) _master.gain.value = _pendingEnabled ? 1 : 0
 }
 
 // ── Draw (soft pencil scratch) ────────────────────────────────────────────
@@ -17,7 +37,7 @@ export function playDraw(): void {
   const now = performance.now()
   if (now - _lastDraw < 60) return  // throttle: max ~16/s
   _lastDraw = now
-  const c = ctx(); if (!c) return
+  const c = ctx(); if (!c) return; applyPending()
   const buf = c.createBuffer(1, Math.floor(c.sampleRate * 0.04), c.sampleRate)
   const d = buf.getChannelData(0)
   for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 0.25
@@ -32,13 +52,13 @@ export function playDraw(): void {
   gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.04)
   src.connect(filter)
   filter.connect(gain)
-  gain.connect(c.destination)
+  gain.connect(out())
   src.start(); src.stop(c.currentTime + 0.04)
 }
 
 // ── Launch (frequency sweep up) ───────────────────────────────────────────
 export function playLaunch(): void {
-  const c = ctx(); if (!c) return
+  const c = ctx(); if (!c) return; applyPending()
   const osc = c.createOscillator()
   const gain = c.createGain()
   osc.type = 'sine'
@@ -46,7 +66,7 @@ export function playLaunch(): void {
   osc.frequency.exponentialRampToValueAtTime(900, c.currentTime + 0.18)
   gain.gain.setValueAtTime(0.28, c.currentTime)
   gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.22)
-  osc.connect(gain); gain.connect(c.destination)
+  osc.connect(gain); gain.connect(out())
   osc.start(); osc.stop(c.currentTime + 0.22)
 }
 
@@ -54,7 +74,7 @@ export function playLaunch(): void {
 export function playBounce(speed: number): void {
   const vol = Math.min(speed / 8, 1) * 0.22
   if (vol < 0.025) return
-  const c = ctx(); if (!c) return
+  const c = ctx(); if (!c) return; applyPending()
   const osc = c.createOscillator()
   const gain = c.createGain()
   osc.type = 'triangle'
@@ -62,13 +82,13 @@ export function playBounce(speed: number): void {
   osc.frequency.exponentialRampToValueAtTime(90, c.currentTime + 0.06)
   gain.gain.setValueAtTime(vol, c.currentTime)
   gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.07)
-  osc.connect(gain); gain.connect(c.destination)
+  osc.connect(gain); gain.connect(out())
   osc.start(); osc.stop(c.currentTime + 0.07)
 }
 
 // ── Win (ascending arpeggio) ──────────────────────────────────────────────
 export function playWin(): void {
-  const c = ctx(); if (!c) return
+  const c = ctx(); if (!c) return; applyPending()
   ;[523, 659, 784, 1047].forEach((freq, i) => {
     const osc = c.createOscillator()
     const gain = c.createGain()
@@ -77,14 +97,14 @@ export function playWin(): void {
     osc.frequency.setValueAtTime(freq, t)
     gain.gain.setValueAtTime(0.25, t)
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.32)
-    osc.connect(gain); gain.connect(c.destination)
+    osc.connect(gain); gain.connect(out())
     osc.start(t); osc.stop(t + 0.32)
   })
 }
 
 // ── Loss (descending minor tones) ─────────────────────────────────────────
 export function playLoss(): void {
-  const c = ctx(); if (!c) return
+  const c = ctx(); if (!c) return; applyPending()
   ;[392, 330, 262].forEach((freq, i) => {
     const osc = c.createOscillator()
     const gain = c.createGain()
@@ -93,14 +113,14 @@ export function playLoss(): void {
     osc.frequency.setValueAtTime(freq, t)
     gain.gain.setValueAtTime(0.22, t)
     gain.gain.exponentialRampToValueAtTime(0.001, t + 0.38)
-    osc.connect(gain); gain.connect(c.destination)
+    osc.connect(gain); gain.connect(out())
     osc.start(t); osc.stop(t + 0.38)
   })
 }
 
 // ── UI tap ────────────────────────────────────────────────────────────────
 export function playTap(): void {
-  const c = ctx(); if (!c) return
+  const c = ctx(); if (!c) return; applyPending()
   const osc = c.createOscillator()
   const gain = c.createGain()
   osc.type = 'sine'
@@ -108,6 +128,22 @@ export function playTap(): void {
   osc.frequency.exponentialRampToValueAtTime(500, c.currentTime + 0.04)
   gain.gain.setValueAtTime(0.12, c.currentTime)
   gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.05)
-  osc.connect(gain); gain.connect(c.destination)
+  osc.connect(gain); gain.connect(out())
   osc.start(); osc.stop(c.currentTime + 0.05)
+}
+
+// ── Unlock chime (rising two-tone) ────────────────────────────────────────
+export function playUnlock(): void {
+  const c = ctx(); if (!c) return; applyPending()
+  ;[660, 880].forEach((freq, i) => {
+    const osc = c.createOscillator()
+    const gain = c.createGain()
+    const t = c.currentTime + i * 0.14
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(freq, t)
+    gain.gain.setValueAtTime(0.2, t)
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4)
+    osc.connect(gain); gain.connect(out())
+    osc.start(t); osc.stop(t + 0.4)
+  })
 }
