@@ -15,6 +15,7 @@ dist-ssr
 # Claude Code internals
 .claude/
 .superpowers/
+SPECS.md
 
 # Editor directories and files
 .vscode/*
