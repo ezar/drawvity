@@ -1,0 +1,53 @@
+<h2>Which visual style is the final direction?</h2>
+<p class="subtitle">The prototype supports 3 art directions. Pick one to lock in for the real build.</p>
+
+<div class="cards">
+  <div class="card" data-choice="sketchbook" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#FAF4E6;padding:20px;border-bottom:1px solid #e0d9c8">
+      <div style="font-family:'Georgia',serif;font-size:28px;color:#1F1A14;line-height:1">Draw.<br><span style="color:#E25C3B">Watch.</span></div>
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <div style="width:40px;height:40px;border-radius:50%;background:#E25C3B;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)"></div>
+        <div style="width:60px;height:8px;border-radius:4px;border:2px dashed #1F1A14;opacity:.6"></div>
+        <div style="font-size:20px">★</div>
+      </div>
+      <div style="margin-top:10px;height:1px;width:100%;background:repeating-linear-gradient(90deg,#1F1A14 0,#1F1A14 4px,transparent 4px,transparent 8px);opacity:.15"></div>
+      <div style="font-size:11px;color:#5C5240;margin-top:6px;font-style:italic">Paper grain · dashed edges · hand-wobble UI</div>
+    </div>
+    <div class="card-body">
+      <h3>Sketchbook</h3>
+      <p>Warm cream paper, pencil-drawn borders, organic feel. The default in the prototype — closest to the "draw on paper" fantasy.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="riso" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#FAF4E6;padding:20px;border-bottom:1px solid #e0d9c8">
+      <div style="font-family:'Georgia',serif;font-size:28px;color:#1F1A14;line-height:1">Draw.<br><span style="color:#E25C3B;text-shadow:2px 2px 0 #2E5BB8">Watch.</span></div>
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <div style="width:40px;height:40px;border-radius:4px;background:#E25C3B;box-shadow:3px 3px 0 rgba(31,26,20,.85)"></div>
+        <div style="width:60px;height:8px;background:#1F1A14;opacity:.7"></div>
+        <div style="font-size:20px;text-shadow:2px 2px 0 #E8B73E">★</div>
+      </div>
+      <div style="font-size:11px;color:#5C5240;margin-top:14px;font-style:italic">Flat saturated · halftone grain · slight misregister</div>
+    </div>
+    <div class="card-body">
+      <h3>Risograph</h3>
+      <p>Bold flat colors, hard shadow offset, retro print feel. More graphic, less organic. Strong personality.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="toy" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#f8f4ee;padding:20px;border-bottom:1px solid #e0d9c8">
+      <div style="font-family:'Georgia',serif;font-size:28px;color:#1F1A14;line-height:1">Draw.<br><span style="color:#E25C3B">Watch.</span></div>
+      <div style="margin-top:12px;display:flex;gap:8px;align-items:center">
+        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#f07060,#E25C3B);box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 8px 20px rgba(31,26,20,.18)"></div>
+        <div style="width:60px;height:10px;border-radius:999px;background:#e8e2d8;box-shadow:0 1px 0 rgba(255,255,255,.8) inset,0 4px 8px rgba(31,26,20,.1)"></div>
+        <div style="font-size:20px;filter:drop-shadow(0 4px 6px rgba(31,26,20,.2))">★</div>
+      </div>
+      <div style="font-size:11px;color:#5C5240;margin-top:14px;font-style:italic">Clean surfaces · soft shadow · rounded corners</div>
+    </div>
+    <div class="card-body">
+      <h3>Modern Toy</h3>
+      <p>Soft plasticine look, real shadows, smooth rounded shapes. Closest to a polished mobile game aesthetic.</p>
+    </div>
+  </div>
+</div>

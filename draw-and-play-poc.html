@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Dibuja y Juega</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; touch-action: none; }
+
+body {
+  background: #fdf6e8;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  user-select: none;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #fff;
+  border-bottom: 2px solid #f0e0c0;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 800;
+  color: #e05a20;
+}
+
+.mode-pills {
+  display: flex;
+  gap: 6px;
+  margin-left: 4px;
+}
+
+.pill {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #f5ede0;
+  color: #888;
+}
+.pill.active { background: #e05a20; color: #fff; border-color: #e05a20; }
+.pill:hover:not(.active) { border-color: #e05a20; color: #e05a20; }
+
+.color-row {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+.color-dot {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: transform 0.1s;
+}
+.color-dot.selected { border-color: #333; transform: scale(1.2); }
+.color-dot:hover { transform: scale(1.15); }
+
+#btn-launch {
+  background: #f0c040;
+  border: none;
+  border-radius: 20px;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 6px 16px;
+  cursor: pointer;
+  color: #5a3a00;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+#btn-launch:hover { background: #e0b030; transform: scale(1.04); }
+
+#btn-clear {
+  background: transparent;
+  border: 2px solid #ddd;
+  border-radius: 20px;
+  font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  cursor: pointer;
+  color: #aaa;
+  transition: all 0.15s;
+}
+#btn-clear:hover { border-color: #e05a20; color: #e05a20; }
+
+#wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+#draw-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+#physics-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* Tutorial overlay */
+#tutorial {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.tut-card {
+  background: rgba(255,255,255,0.92);
+  border: 3px dashed #f0c040;
+  border-radius: 24px;
+  padding: 24px 32px;
+  text-align: center;
+  max-width: 320px;
+}
+.tut-card .big { font-size: 48px; margin-bottom: 8px; }
+.tut-card h2 { font-size: 20px; font-weight: 800; color: #e05a20; margin-bottom: 6px; }
+.tut-card p { font-size: 14px; color: #666; line-height: 1.5; }
+
+/* HUD de pelota */
+#hud {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 6;
+}
+.ball-thumb {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  cursor: pointer;
+  transition: transform 0.1s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.ball-thumb:hover { transform: scale(1.15); }
+.ball-thumb.sel { border-color: #333; transform: scale(1.2); }
+
+/* Toast mensaje */
+#toast {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(30,30,30,0.85);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 18px;
+  border-radius: 20px;
+  z-index: 8;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+/* Stroke thickness slider */
+#thickness-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#thickness-wrap span { font-size: 11px; color: #aaa; }
+#thickness { width: 60px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">✏️ Dibuja y Juega</div>
+
+  <div class="mode-pills">
+    <div class="pill active" data-mode="draw">✏️ Dibujar</div>
+    <div class="pill" data-mode="play">🎮 Jugar</div>
+  </div>
+
+  <div id="thickness-wrap">
+    <span>grosor</span>
+    <input type="range" id="thickness" min="4" max="28" value="10">
+  </div>
+
+  <div class="color-row">
+    <div class="color-dot selected" data-color="#2d6be4" style="background:#2d6be4"></div>
+    <div class="color-dot" data-color="#e05a20" style="background:#e05a20"></div>
+    <div class="color-dot" data-color="#4cb86e" style="background:#4cb86e"></div>
+    <div class="color-dot" data-color="#a855f7" style="background:#a855f7"></div>
+    <div class="color-dot" data-color="#444444" style="background:#444444"></div>
+  </div>
+
+  <button id="btn-launch">🚀 Lanzar pelota</button>
+  <button id="btn-clear">🗑 Borrar todo</button>
+</header>
+
+<div id="wrap">
+  <canvas id="draw-canvas"></canvas>
+  <canvas id="physics-canvas"></canvas>
+
+  <div id="tutorial">
+    <div class="tut-card">
+      <div class="big">✏️</div>
+      <h2>¡Dibuja algo!</h2>
+      <p>Dibuja rampas, cuencos o zigzags con el ratón o el dedo.<br>Luego pulsa <strong>🚀 Lanzar pelota</strong> para ver qué pasa.</p>
+    </div>
+  </div>
+
+  <div id="hud">
+    <div class="ball-thumb sel" data-ball="normal" style="background:radial-gradient(circle at 35% 35%, #f0c040, #c07800)" title="Pelota normal"></div>
+    <div class="ball-thumb" data-ball="heavy" style="background:radial-gradient(circle at 35% 35%, #888, #333)" title="Pelota pesada"></div>
+    <div class="ball-thumb" data-ball="bouncy" style="background:radial-gradient(circle at 35% 35%, #4cb86e, #1a6e38)" title="Pelota saltarina"></div>
+    <div class="ball-thumb" data-ball="tiny" style="background:radial-gradient(circle at 35% 35%, #f06090, #a01040)" title="Pelota pequeña"></div>
+  </div>
+
+  <div id="toast"></div>
+</div>
+
+<script>
+// poly-decomp inline (necesario para fromVertices con polígonos cóncavos)
+(function() {
+  function isLeft(a, b, c) { return (b[0]-a[0])*(c[1]-a[1]) - (b[1]-a[1])*(c[0]-a[0]); }
+  function decomp(poly) { return [poly]; } // fallback convex-only
+  decomp.quickDecomp = function(vs, result) { result.push(vs.slice()); return result; };
+  decomp.makeCCW = function(vs) {
+    var area = 0;
+    for (var i = 0; i < vs.length; i++) {
+      var j = (i+1) % vs.length;
+      area += vs[i][0]*vs[j][1];
+      area -= vs[j][0]*vs[i][1];
+    }
+    if (area < 0) vs.reverse();
+  };
+  decomp.isSimple = function() { return true; };
+  decomp.removeCollinearPoints = function(vs) { return vs; };
+  Matter.Common.setDecomp(decomp);
+})();
+
+const { Engine, Render, Runner, Bodies, Body, Composite, Events, Mouse, MouseConstraint, World, Vertices } = Matter;
+
+const wrap = document.getElementById('wrap');
+const drawCanvas = document.getElementById('draw-canvas');
+const physCanvas = document.getElementById('physics-canvas');
+const dctx = drawCanvas.getContext('2d');
+const tutorial = document.getElementById('tutorial');
+const toast = document.getElementById('toast');
+
+let mode = 'draw';
+let drawColor = '#2d6be4';
+let strokeThickness = 10;
+let selectedBall = 'normal';
+let isDrawing = false;
+let currentStroke = [];
+let strokes = []; // {points, color, thickness}
+let engine, render, runner, world;
+let physBodies = [];
+let hasDraw = false;
+
+// Resize
+function resize() {
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  drawCanvas.width = w; drawCanvas.height = h;
+  physCanvas.width = w; physCanvas.height = h;
+  redrawStrokes();
+  if (engine) initPhysics();
+}
+
+// ---- DRAW MODE ----
+function getPos(e) {
+  const r = drawCanvas.getBoundingClientRect();
+  if (e.touches) {
+    return { x: e.touches[0].clientX - r.left, y: e.touches[0].clientY - r.top };
+  }
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+drawCanvas.addEventListener('mousedown', startDraw);
+drawCanvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(e); }, { passive: false });
+drawCanvas.addEventListener('mousemove', moveDraw);
+drawCanvas.addEventListener('touchmove', e => { e.preventDefault(); moveDraw(e); }, { passive: false });
+drawCanvas.addEventListener('mouseup', endDraw);
+drawCanvas.addEventListener('touchend', endDraw);
+
+function startDraw(e) {
+  if (mode !== 'draw') return;
+  isDrawing = true;
+  const p = getPos(e);
+  currentStroke = [p];
+  dctx.beginPath();
+  dctx.moveTo(p.x, p.y);
+}
+
+function moveDraw(e) {
+  if (!isDrawing || mode !== 'draw') return;
+  const p = getPos(e);
+  currentStroke.push(p);
+  dctx.lineTo(p.x, p.y);
+  dctx.strokeStyle = drawColor;
+  dctx.lineWidth = strokeThickness;
+  dctx.lineCap = 'round';
+  dctx.lineJoin = 'round';
+  dctx.stroke();
+  dctx.beginPath();
+  dctx.moveTo(p.x, p.y);
+}
+
+function endDraw() {
+  if (!isDrawing) return;
+  isDrawing = false;
+  if (currentStroke.length > 3) {
+    strokes.push({ points: [...currentStroke], color: drawColor, thickness: strokeThickness });
+    hasDraw = true;
+    tutorial.style.opacity = '0';
+    tutorial.style.pointerEvents = 'none';
+  }
+  currentStroke = [];
+}
+
+function redrawStrokes() {
+  dctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  for (const s of strokes) {
+    if (s.points.length < 2) continue;
+    dctx.beginPath();
+    dctx.moveTo(s.points[0].x, s.points[0].y);
+    for (let i = 1; i < s.points.length; i++) {
+      dctx.lineTo(s.points[i].x, s.points[i].y);
+    }
+    dctx.strokeStyle = s.color;
+    dctx.lineWidth = s.thickness;
+    dctx.lineCap = 'round';
+    dctx.lineJoin = 'round';
+    dctx.stroke();
+  }
+}
+
+// ---- PHYSICS ----
+function initPhysics() {
+  if (render) { Render.stop(render); Runner.stop(runner); }
+  if (engine) Engine.clear(engine);
+
+  const W = physCanvas.width, H = physCanvas.height;
+
+  engine = Engine.create({ gravity: { y: 1.5 } });
+  world = engine.world;
+
+  render = Render.create({
+    canvas: physCanvas,
+    engine,
+    options: {
+      width: W, height: H,
+      background: 'transparent',
+      wireframes: false,
+      pixelRatio: window.devicePixelRatio || 1
+    }
+  });
+
+  // Suelo y paredes
+  const floor = Bodies.rectangle(W/2, H + 25, W + 100, 50, {
+    isStatic: true, render: { fillStyle: '#d4b896' }, label: 'floor'
+  });
+  const wL = Bodies.rectangle(-25, H/2, 50, H*2, { isStatic: true, render: { fillStyle: 'transparent' } });
+  const wR = Bodies.rectangle(W+25, H/2, 50, H*2, { isStatic: true, render: { fillStyle: 'transparent' } });
+  Composite.add(world, [floor, wL, wR]);
+
+  // Convertir trazos a cuerpos físicos
+  physBodies = [];
+  for (const s of strokes) {
+    const bodies = strokeToBodies(s);
+    bodies.forEach(b => Composite.add(world, b));
+    physBodies.push(...bodies);
+  }
+
+  Render.run(render);
+  runner = Runner.create();
+  Runner.run(runner, engine);
+}
+
+function strokeToBodies(stroke) {
+  const pts = stroke.points;
+  const thickness = stroke.thickness;
+  const result = [];
+  const step = Math.max(2, Math.floor(pts.length / 60));
+
+  for (let i = 0; i < pts.length - step; i += step) {
+    const a = pts[i], b = pts[i + step] || pts[pts.length - 1];
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    if (len < 2) continue;
+    const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+    const angle = Math.atan2(dy, dx);
+    const seg = Bodies.rectangle(cx, cy, len + 2, thickness, {
+      isStatic: true,
+      angle,
+      friction: 0.5,
+      restitution: 0.2,
+      render: { fillStyle: stroke.color, strokeStyle: stroke.color, lineWidth: 0 },
+      label: 'stroke'
+    });
+    result.push(seg);
+  }
+  return result;
+}
+
+function launchBall() {
+  if (!engine) return;
+  const W = physCanvas.width;
+  const configs = {
+    normal:  { r: 18, density: 0.004, restitution: 0.5, fill: '#f0c040', stroke: '#c07800' },
+    heavy:   { r: 22, density: 0.015, restitution: 0.2, fill: '#888',    stroke: '#333' },
+    bouncy:  { r: 16, density: 0.002, restitution: 0.9, fill: '#4cb86e', stroke: '#1a6e38' },
+    tiny:    { r: 8,  density: 0.003, restitution: 0.6, fill: '#f06090', stroke: '#a01040' },
+  };
+  const c = configs[selectedBall];
+  const ball = Bodies.circle(
+    W * 0.1 + Math.random() * W * 0.3,
+    -40,
+    c.r,
+    {
+      restitution: c.restitution,
+      friction: 0.3,
+      density: c.density,
+      render: { fillStyle: c.fill, strokeStyle: c.stroke, lineWidth: 2 },
+      label: 'ball'
+    }
+  );
+  Composite.add(world, ball);
+  showToast(selectedBall === 'bouncy' ? '🏀 ¡Saltarina!' : selectedBall === 'heavy' ? '🪨 ¡Pesada!' : selectedBall === 'tiny' ? '⚽ ¡Pequeña!' : '⚽ ¡Allá va!');
+}
+
+function clearAll() {
+  strokes = [];
+  hasDraw = false;
+  dctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  tutorial.style.opacity = '1';
+  tutorial.style.pointerEvents = 'none';
+  if (render) { Render.stop(render); Runner.stop(runner); }
+  if (engine) Engine.clear(engine);
+  engine = null; render = null; runner = null;
+  physCanvas.getContext('2d').clearRect(0, 0, physCanvas.width, physCanvas.height);
+  setMode('draw');
+}
+
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.mode === m));
+  drawCanvas.style.zIndex = m === 'draw' ? '2' : '0';
+  physCanvas.style.zIndex = m === 'play' ? '2' : '1';
+  drawCanvas.style.cursor = m === 'draw' ? 'crosshair' : 'default';
+
+  if (m === 'play') {
+    initPhysics();
+    launchBall();
+    showToast('¡Modo juego! Pulsa 🚀 para lanzar más pelotas');
+  }
+}
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+// ---- CONTROLES ----
+document.querySelectorAll('.pill').forEach(p => {
+  p.addEventListener('click', () => setMode(p.dataset.mode));
+});
+
+document.querySelectorAll('.color-dot').forEach(d => {
+  d.addEventListener('click', () => {
+    document.querySelectorAll('.color-dot').forEach(x => x.classList.remove('selected'));
+    d.classList.add('selected');
+    drawColor = d.dataset.color;
+    if (mode !== 'draw') setMode('draw');
+  });
+});
+
+document.getElementById('thickness').addEventListener('input', e => {
+  strokeThickness = +e.target.value;
+});
+
+document.getElementById('btn-launch').addEventListener('click', () => {
+  if (mode !== 'play') { setMode('play'); return; }
+  launchBall();
+});
+
+document.getElementById('btn-clear').addEventListener('click', clearAll);
+
+document.querySelectorAll('.ball-thumb').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('.ball-thumb').forEach(x => x.classList.remove('sel'));
+    b.classList.add('sel');
+    selectedBall = b.dataset.ball;
+  });
+});
+
+window.addEventListener('resize', resize);
+resize();
+</script>
+</body>
+</html>
