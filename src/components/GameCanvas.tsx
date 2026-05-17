@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback } from 'react'
 import type { Level, WorldDef, BallDef, Point } from '../types'
-import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail } from '../engine/renderer'
+import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail, drawBallSpawn } from '../engine/renderer'
 import { createPhysicsWorld, stepEngine, destroyPhysicsWorld } from '../engine/physics'
 import type { TrailPoint } from '../engine/renderer'
 
@@ -31,15 +31,15 @@ export function GameCanvas({
   const drawingRef = useRef<Point[] | null>(null)
   const rafRef = useRef(0)
 
-  // ── render static layer (BG + obstacles + strokes)
+  // ── render static layer (BG + obstacles + strokes + spawn indicator)
   const renderStatic = useCallback(() => {
     const c = staticRef.current; if (!c) return
     const ctx = c.getContext('2d')!
-    // ctx was already scaled by setupCanvas; just draw at CSS coords
     drawWorldBg(ctx, width, height, world)
     drawObstacles(ctx, level.obstacles, width, height, world.accent)
     drawStrokes(ctx, strokes, strokeColor)
-  }, [width, height, world, level, strokes, strokeColor])
+    drawBallSpawn(ctx, level.ballSpawn, width, height, ball.color, launching)
+  }, [width, height, world, level, strokes, strokeColor, ball.color, launching])
 
   // ── setup canvases ONLY on size change (avoids compounding ctx.scale)
   useEffect(() => {
