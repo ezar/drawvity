@@ -9,9 +9,10 @@ import type { Difficulty, ScreenId } from '../types'
 interface Props { onNav: (s: ScreenId) => void }
 
 const CARDS = [
-  { id: 'map' as ScreenId,        label: 'Play',       desc: 'Challenge levels', icon: '▶', tone: palette.primary },
-  { id: 'free' as ScreenId,       label: 'Free Draw',  desc: 'Sandbox mode',     icon: '✎', tone: palette.tertiary },
-  { id: 'collection' as ScreenId, label: 'Collection', desc: 'Your unlocks',     icon: '★', tone: palette.secondary },
+  { id: 'map' as ScreenId,        label: 'Play',         desc: 'Challenge levels', icon: '▶', tone: palette.primary },
+  { id: 'free' as ScreenId,       label: 'Free Draw',    desc: 'Sandbox mode',     icon: '✎', tone: palette.tertiary },
+  { id: 'collection' as ScreenId, label: 'Collection',   desc: 'Your unlocks',     icon: '★', tone: palette.secondary },
+  { id: 'editor' as ScreenId,     label: 'Level Editor', desc: 'Build your own',   icon: '⚒', tone: '#7C6B52' },
 ]
 
 const DIFFICULTIES: { id: Difficulty; label: string; desc: string }[] = [

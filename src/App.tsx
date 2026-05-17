@@ -4,6 +4,7 @@ import { MenuScreen } from './screens/MenuScreen'
 import { WorldMapScreen } from './screens/WorldMapScreen'
 import { LevelScreen } from './screens/LevelScreen'
 import { CollectionScreen } from './screens/CollectionScreen'
+import { LevelEditorScreen } from './screens/LevelEditorScreen'
 import type { WorldId } from './types'
 
 const slide = {
@@ -66,6 +67,12 @@ export default function App() {
         {screen === 'collection' && (
           <motion.div key="collection" {...slide} style={{ position: 'absolute', inset: 0 }}>
             <CollectionScreen onBack={goMenu} />
+          </motion.div>
+        )}
+
+        {screen === 'editor' && (
+          <motion.div key="editor" {...slide} style={{ position: 'absolute', inset: 0 }}>
+            <LevelEditorScreen onBack={goMenu} />
           </motion.div>
         )}
       </AnimatePresence>
