@@ -10,6 +10,7 @@ interface Props {
   strokesMax: number
   onImprove: () => void
   onNext: () => void
+  onShare: () => void
 }
 
 function Star({ shown, color }: { shown: boolean; color: string }) {
@@ -31,7 +32,7 @@ function Star({ shown, color }: { shown: boolean; color: string }) {
   )
 }
 
-export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext }: Props) {
+export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext, onShare }: Props) {
   const portrait = useIsPortrait()
   const [shown, setShown] = useState(0)
   const stars = strokesUsed === 1 ? 3 : strokesUsed === 2 ? 2 : 1
@@ -77,16 +78,21 @@ export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext }: Props
           {stars === 3 ? 'Perfect — 1 stroke!' : isFinite(strokesMax) ? `${strokesUsed} of ${strokesMax} strokes used` : `${strokesUsed} stroke${strokesUsed !== 1 ? 's' : ''} used`}
         </div>
 
-        <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
           <motion.button whileTap={{ scale: 0.94 }}
             onClick={() => { hapticTap(); playTap(); onImprove() }}
-            style={{ padding: '10px 18px', borderRadius: toy.radius, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 15, boxShadow: toy.shadow }}>
+            style={{ padding: '10px 16px', borderRadius: toy.radius, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 14, boxShadow: toy.shadow }}>
             Improve
           </motion.button>
           <motion.button whileTap={{ scale: 0.94 }}
+            onClick={() => { hapticTap(); playTap(); onShare() }}
+            style={{ padding: '10px 16px', borderRadius: toy.radius, border: toy.border, background: palette.paper, color: palette.ink, cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 14, boxShadow: toy.shadow }}>
+            Share 📤
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.94 }}
             onClick={() => { hapticTap(); playTap(); onNext() }}
-            style={{ padding: '10px 20px', borderRadius: toy.btnRadius, border: 'none', background: palette.primary, color: '#fff', cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 15, boxShadow: toy.shadow }}>
-            Next level →
+            style={{ padding: '10px 16px', borderRadius: toy.btnRadius, border: 'none', background: palette.primary, color: '#fff', cursor: 'pointer', fontFamily: 'Caprasimo, serif', fontSize: 14, boxShadow: toy.shadow }}>
+            Next →
           </motion.button>
         </div>
       </motion.div>

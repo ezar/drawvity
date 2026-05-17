@@ -14,9 +14,10 @@ interface Props {
   strokesUsed: number
   onBack: () => void
   onRetry: () => void
+  onUndo?: () => void
 }
 
-export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onBack, onRetry }: Props) {
+export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onBack, onRetry, onUndo }: Props) {
   const portrait = useIsPortrait()
   const isSpace = world.id === 'space'
   const textColor = isSpace ? '#F2EBDA' : palette.ink
@@ -57,9 +58,21 @@ export function HUD({ world, levelName, levelIndex, strokesMax, strokesUsed, onB
         </div>
       </div>
 
-      {/* right: stroke counter + retry */}
+      {/* right: stroke counter + undo + retry */}
       <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
         <StrokeCounter max={strokesMax} used={strokesUsed} />
+        {onUndo && strokesUsed > 0 && (
+          <motion.button
+            whileTap={{ scale: 0.88 }}
+            onClick={() => { hapticTap(); playTap(); onUndo() }}
+            title="Undo last stroke"
+            style={{
+              width: 34, height: 34, borderRadius: 999, border: toy.border,
+              background: btnBg, color: textColor, cursor: 'pointer', fontSize: 14,
+              boxShadow: toy.shadow,
+            }}
+          >⌫</motion.button>
+        )}
         <motion.button
           whileTap={{ scale: 0.88 }}
           onClick={() => { hapticTap(); playTap(); onRetry() }}

@@ -61,6 +61,27 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
     setOverlay('win')
   }, [freeDraw, currentWorld, currentLevel, recordResult])
 
+  const handleShare = async () => {
+    // grab static canvas (has BG + obstacles + strokes)
+    const canvas = document.querySelector('canvas') as HTMLCanvasElement | null
+    if (!canvas) return
+    try {
+      const blob = await new Promise<Blob>((res, rej) =>
+        canvas.toBlob(b => b ? res(b) : rej(), 'image/png')
+      )
+      const file = new File([blob], 'drawvity-solution.png', { type: 'image/png' })
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Drawvity', text: 'Check my solution! 🎯' })
+      } else {
+        // fallback: download
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url; a.download = 'drawvity-solution.png'; a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch { /* user cancelled or not supported */ }
+  }
+
   const handleLoss = useCallback(() => {
     setLaunching(false)
     if (freeDraw) {
@@ -79,6 +100,11 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
     setOverlay(null)
   }
 
+  const undo = () => {
+    if (strokes.length === 0 || launching) return
+    setStrokes(strokes.slice(0, -1))
+  }
+
   return (
     <div style={{
       width: '100%', height: '100%',
@@ -94,6 +120,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
         strokesUsed={strokes.length}
         onBack={onBack}
         onRetry={retry}
+        onUndo={undo}
       />
 
       {/* canvas area */}
@@ -138,6 +165,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false }: Props) {
             strokesMax={level.strokesMax}
             onImprove={retry}
             onNext={() => { setOverlay(null); onNextLevel() }}
+            onShare={handleShare}
           />
         )}
         {overlay === 'loss' && (
