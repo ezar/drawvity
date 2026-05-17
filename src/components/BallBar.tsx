@@ -1,5 +1,6 @@
 import { toy, palette } from '../theme/toy'
 import { BALLS } from '../data/balls'
+import { useIsPortrait } from '../hooks/useIsPortrait'
 import type { BallId, WorldDef } from '../types'
 import { useGameStore } from '../store/gameStore'
 
@@ -15,7 +16,10 @@ interface Props {
 
 export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launching, onLaunch, compact = false }: Props) {
   const unlockedBalls = useGameStore((s) => s.unlockedBalls)
+  const portrait = useIsPortrait()
   const isSpace = world.id === 'space'
+  // on portrait mobile, show only first 4 balls to prevent overflow
+  const visibleBalls = portrait ? BALLS.slice(0, 4) : BALLS
   const textColor = isSpace ? '#F2EBDA' : palette.ink
   const panelBg = isSpace ? 'rgba(255,255,255,.08)' : palette.paper
 
@@ -34,7 +38,7 @@ export function BallBar({ selectedBall, onSelectBall, world, canLaunch, launchin
         background: panelBg, border: toy.border, borderRadius: 999,
         boxShadow: toy.shadow, flexShrink: 0,
       }}>
-        {BALLS.map((b) => {
+        {visibleBalls.map((b) => {
           const unlocked = unlockedBalls.includes(b.id)
           const selected = b.id === selectedBall
           return (

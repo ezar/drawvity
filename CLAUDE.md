@@ -1,34 +1,47 @@
-# Draw & Play
+# Drawvity
 
-A 2D physics game for kids. The player draws free strokes that become solid geometry,
-guiding a ball to a star goal.
+Physics puzzle game. Player draws freehand strokes on canvas, launches a ball that rolls/bounces along strokes to reach a star goal. 40 levels across 4 worlds.
 
 ## Stack
-React 18 + TypeScript + Vite + Matter.js + Zustand + Framer Motion
+React 19 + TypeScript + Vite + Matter.js + Zustand (persist) + Framer Motion + Vitest + vite-plugin-pwa
 
-## Existing foundation
-- Working PoC in `draw-and-play-poc.html` (plain HTML — read it before writing any code)
-- Key logic already implemented: `strokeToBodies()`, dual canvas, 4 ball types
+## Key decisions
+- **Visual style**: Modern Toy (clean surfaces, soft shadows, rounded corners)
+- **Physics**: Matter.js headless — canvas handles all rendering
+- **Canvas**: Two stacked layers — static (BG + obstacles + strokes) + dynamic (ball + trail + goal)
+- **Levels**: Normalized 0–1 coordinates, pre-placed static obstacles in `src/data/levels/`
+- **State**: Zustand with localStorage persist key `drawvity-v1`
+- **Naming**: English only. No `any`. PascalCase components, `use` prefix hooks.
 
-## Development rules
-- Port logic from the PoC, do not rewrite it
-- Levels are defined in `src/data/levels.ts` as typed JSON objects
-- All level positions use fractions (0–1), never raw pixels
-- All sounds are procedural via Web Audio API — no audio files
-- No animation libraries other than Framer Motion
-- Persistence via localStorage only, through Zustand persist middleware
-- Deploy to GitHub Pages using `gh-pages`
+## Structure
+```
+src/
+├── types.ts              # Level, WorldDef, BallDef, Point, etc.
+├── theme/toy.ts          # Design tokens + palette
+├── store/gameStore.ts    # Zustand store (screen, progress, unlocks)
+├── data/                 # worlds.ts, balls.ts, levels/index.ts + 4 world files
+├── engine/               # physics.ts (Matter.js), renderer.ts (canvas draws)
+├── hooks/useIsPortrait.ts
+├── components/           # GameCanvas, HUD, BallBar, StrokeCounter
+├── screens/              # MenuScreen, WorldMapScreen, LevelScreen, CollectionScreen
+│   └── overlays/         # WinOverlay, LossOverlay
+└── App.tsx               # AnimatePresence screen routing
+```
 
-## Naming conventions
-- Components: PascalCase
-- Hooks: camelCase prefixed with `use`
-- Types: separate interfaces, never inline
-- No `any` — strict TypeScript throughout
-- All identifiers, comments, and strings in English
+## Commands
+- `npm run dev` — start dev server (localhost:5173)
+- `npm test` — Vitest (12 tests: store + physics)
+- `npm run build` — production build with PWA service worker
+- `npm run lint` — ESLint
 
-## Single game round flow
-1. Player draws → useDrawing captures points → strokeToBodies generates Matter.js bodies
-2. Player taps Launch → Matter.js simulation activates
-3. GameCanvas detects ball-goal collision → calls onGoalReached()
-4. ResultOverlay calculates stars → calls completeLevel() on the store
-5. Store updates progress in localStorage and recalculates unlocks
+## Game round flow
+1. Player draws strokes → points captured via pointer events → static canvas redraws
+2. Player taps Launch → `createPhysicsWorld()` builds Matter.js engine
+3. RAF loop: `stepEngine()` → read ball position → dynamic canvas redraws
+4. Win: ball within 24px of goal → `recordResult()` → WinOverlay
+5. Loss: ball off-screen or 720 frames → LossOverlay (or silent retry in free draw)
+
+## Docs
+- Design spec: `docs/superpowers/specs/2026-05-17-drawvity-design.md`
+- Implementation plan: `docs/superpowers/plans/2026-05-17-drawvity-impl.md`
+- Design prototype (reference): `docs/design-extracted/`
