@@ -16,6 +16,7 @@ const initialData = {
   selectedBall: 'classic' as BallId,
   selectedColorId: 'ink' as string,
   difficulty: 'medium' as Difficulty,
+  hasSeenOnboarding: false,
   progress: {
     lab:     emptyProgress(),
     factory: emptyProgress(),
@@ -36,6 +37,7 @@ interface GameState {
   progress: Record<WorldId, Progress>
   unlockedBalls: BallId[]
   unlockedColors: string[]
+  hasSeenOnboarding: boolean
 
   totalStars: (world: WorldId) => number
   isWorldUnlocked: (world: WorldId) => boolean
@@ -47,6 +49,7 @@ interface GameState {
   selectColor: (id: string) => void
   setDifficulty: (d: Difficulty) => void
   recordResult: (world: WorldId, level: number, stars: number) => void
+  setSeenOnboarding: () => void
   getInitialState: () => typeof initialData
 }
 
@@ -67,6 +70,7 @@ export const useGameStore = create<GameState>()(
         return get().totalStars(prev) >= UNLOCK_THRESHOLD
       },
 
+      setSeenOnboarding: () => set({ hasSeenOnboarding: true }),
       setScreen: (screen) => set({ screen }),
       setWorld: (currentWorld) => set({ currentWorld }),
       setLevel: (currentLevel) => set({ currentLevel }),
@@ -97,12 +101,13 @@ export const useGameStore = create<GameState>()(
     {
       name: 'drawvity-v1',
       partialize: (s) => ({
-        progress:        s.progress,
-        unlockedBalls:   s.unlockedBalls,
-        unlockedColors:  s.unlockedColors,
-        selectedBall:    s.selectedBall,
-        selectedColorId: s.selectedColorId,
-        difficulty:      s.difficulty,
+        progress:           s.progress,
+        unlockedBalls:      s.unlockedBalls,
+        unlockedColors:     s.unlockedColors,
+        selectedBall:       s.selectedBall,
+        selectedColorId:    s.selectedColorId,
+        difficulty:         s.difficulty,
+        hasSeenOnboarding:  s.hasSeenOnboarding,
       }),
     }
   )

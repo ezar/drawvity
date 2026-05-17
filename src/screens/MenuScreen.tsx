@@ -1,9 +1,11 @@
-import { motion } from 'framer-motion'
+import { useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { toy, palette } from '../theme/toy'
 import { useIsPortrait } from '../hooks/useIsPortrait'
 import { playTap } from '../engine/audio'
 import { hapticTap } from '../hooks/useHaptic'
 import { useGameStore } from '../store/gameStore'
+import { OnboardingOverlay } from './overlays/OnboardingOverlay'
 import type { Difficulty, ScreenId } from '../types'
 
 interface Props { onNav: (s: ScreenId) => void }
@@ -23,13 +25,21 @@ const DIFFICULTIES: { id: Difficulty; label: string; desc: string }[] = [
 
 export function MenuScreen({ onNav }: Props) {
   const portrait = useIsPortrait()
-  const { difficulty, setDifficulty } = useGameStore()
+  const { difficulty, setDifficulty, hasSeenOnboarding, setSeenOnboarding } = useGameStore()
+  // auto-show on first launch; user can re-open via "?" button
+  const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding)
+
+  const dismissOnboarding = () => {
+    setShowOnboarding(false)
+    setSeenOnboarding()
+  }
 
   return (
     <div style={{
       width: '100%', height: '100%', background: palette.paper,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       overflowY: portrait ? 'auto' : 'hidden',
+      position: 'relative',
     }}>
     <div style={{
       width: '100%', maxWidth: portrait ? '100%' : 1100,
@@ -141,12 +151,34 @@ export function MenuScreen({ onNav }: Props) {
         ))}
         <motion.div
           variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
-          style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: palette.inkSoft, textAlign: 'center', opacity: .65, marginTop: 4 }}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginTop: 4 }}
         >
-          v{__BUILD_VERSION__} · draw. watch. wonder.
+          <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: palette.inkSoft, opacity: .65 }}>
+            v{__BUILD_VERSION__} · draw. watch. wonder.
+          </span>
+          <motion.button
+            whileTap={{ scale: 0.88 }}
+            onClick={() => { hapticTap(); playTap(); setShowOnboarding(true) }}
+            title="How to play"
+            style={{
+              width: 22, height: 22, borderRadius: 999,
+              border: toy.border, background: palette.paper,
+              color: palette.inkSoft, cursor: 'pointer',
+              fontFamily: 'JetBrains Mono', fontSize: 11, fontWeight: 700,
+              boxShadow: toy.shadow, lineHeight: 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >?</motion.button>
         </motion.div>
       </motion.div>
     </div>
+
+    {/* onboarding overlay */}
+    <AnimatePresence>
+      {showOnboarding && (
+        <OnboardingOverlay onDismiss={dismissOnboarding} />
+      )}
+    </AnimatePresence>
     </div>
   )
 }
