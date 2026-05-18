@@ -6,6 +6,7 @@ import { WorldMapScreen } from './screens/WorldMapScreen'
 import { LevelScreen } from './screens/LevelScreen'
 import { CollectionScreen } from './screens/CollectionScreen'
 import { LevelEditorScreen } from './screens/LevelEditorScreen'
+import { StatsScreen } from './screens/StatsScreen'
 import { UnlockToast } from './components/UnlockToast'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { consumeImportHash } from './utils/levelShare'
@@ -73,6 +74,12 @@ export default function App() {
             <LevelEditorScreen onBack={goMenu} />
           </motion.div>
         )}
+        {screen === 'stats' && (
+          <motion.div key="stats" {...slide} style={{ position: 'absolute', inset: 0 }}>
+            <StatsScreen onBack={goMenu} />
+          </motion.div>
+        )}
+
         {screen === 'daily' && (
           <motion.div key={`daily-${todayStr()}`} {...slide} style={{ position: 'absolute', inset: 0 }}>
             <LevelScreen onBack={goMenu} onNextLevel={goMenu} dailyDate={todayStr()} />

@@ -15,7 +15,7 @@ interface Props {
 
 export function WorldMapScreen({ onBack, onPickWorld }: Props) {
   const portrait = useIsPortrait()
-  const { progress, isWorldUnlocked, totalStars } = useGameStore()
+  const { progress, isWorldUnlocked, totalStars, personalBests } = useGameStore()
   const [expanded, setExpanded] = useState<WorldId | null>(null)
 
   const allStars = WORLDS.reduce((a, w) => a + totalStars(w.id), 0)
@@ -196,6 +196,9 @@ export function WorldMapScreen({ onBack, onPickWorld }: Props) {
                             >
                               <span>{li + 1}</span>
                               {s > 0 && <span style={{ fontSize: 7 }}>{'★'.repeat(s)}</span>}
+                              {personalBests[`${w.id}-${li}`] !== undefined && (
+                                <span style={{ fontSize: 6, opacity: .7 }}>{personalBests[`${w.id}-${li}`]}✏</span>
+                              )}
                             </motion.button>
                           )
                         })}

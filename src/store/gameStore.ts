@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import { setAudioEnabled } from '../engine/audio'
 import { WORLD_MAP, WORLDS } from '../data/worlds'
 import { STROKE_COLORS } from '../data/colors'
+import { ACHIEVEMENTS } from '../data/achievements'
 import type { WorldId, BallId, ScreenId, Progress, Difficulty, CustomLevel, DailyResult } from '../types'
 
 export interface UnlockToast { icon: string; name: string; detail: string }
@@ -29,6 +30,8 @@ const initialData = {
   dailyResults: {} as Record<string, DailyResult>,
   dailyStreak: 0,
   lastDailyDate: null as string | null,
+  personalBests: {} as Record<string, number>,      // `${world}-${level}` → min strokes
+  unlockedAchievements: [] as string[],
   progress: {
     lab:     emptyProgress(),
     factory: emptyProgress(),
@@ -37,6 +40,55 @@ const initialData = {
   } as Record<WorldId, Progress>,
   unlockedBalls:  ['classic', 'heavy', 'bouncy', 'feather'] as BallId[],
   unlockedColors: ['ink', 'primary', 'secondary', 'tertiary'] as string[],
+}
+
+// ── Achievement checker ────────────────────────────────────────────────────────
+function checkAchievements(
+  get: () => typeof initialData & GameState,
+  set: (p: Partial<typeof initialData & GameState>) => void
+) {
+  const s = get()
+  const newUnlocked = [...s.unlockedAchievements]
+  let toast: UnlockToast | null = null
+
+  const unlock = (id: string) => {
+    if (newUnlocked.includes(id)) return
+    const ach = ACHIEVEMENTS.find(a => a.id === id)
+    if (!ach) return
+    newUnlocked.push(id)
+    if (!toast) toast = { icon: ach.icon, name: ach.name, detail: ach.desc }
+  }
+
+  const allStars = WORLD_ORDER.flatMap(w => s.progress[w]?.stars ?? [])
+  const totalStarsAll = allStars.reduce((a, b) => a + b, 0)
+  const perfCounts = Object.values(s.personalBests).filter(v => v === 1).length
+
+  if (perfCounts >= 1) unlock('one-stroke')
+  if (perfCounts >= 5) unlock('five-perfect')
+
+  for (const wid of WORLD_ORDER) {
+    const ws = s.progress[wid]?.stars ?? []
+    if (ws.length === 10 && ws.every(st => st === 3)) unlock(`perfect-${wid}`)
+  }
+
+  if (allStars.length === 40 && allStars.every(st => st === 3)) unlock('grand-master')
+  if (allStars.filter(st => st > 0).length >= 40) unlock('completionist')
+
+  const dailyCount = Object.keys(s.dailyResults).length
+  if (dailyCount >= 1) unlock('daily-first')
+  if (s.dailyStreak >= 7) unlock('daily-7')
+  if (s.dailyStreak >= 30) unlock('daily-30')
+
+  if (s.unlockedBalls.length >= 6) unlock('ball-collector')
+
+  const unlockedColorCount = STROKE_COLORS.filter(c => totalStarsAll >= c.unlockStars).length
+  if (unlockedColorCount >= 7) unlock('rainbow')
+
+  if (s.customLevels.length >= 1) unlock('level-creator')
+
+  if (newUnlocked.length !== s.unlockedAchievements.length) {
+    set({ unlockedAchievements: newUnlocked, ...(toast && !s.unlockToast ? { unlockToast: toast } : {}) })
+  }
 }
 
 interface GameState {
@@ -57,6 +109,8 @@ interface GameState {
   dailyResults: Record<string, DailyResult>
   dailyStreak: number
   lastDailyDate: string | null
+  personalBests: Record<string, number>
+  unlockedAchievements: string[]
 
   totalStars: (world: WorldId) => number
   isWorldUnlocked: (world: WorldId) => boolean
@@ -68,7 +122,7 @@ interface GameState {
   selectColor: (id: string) => void
   setDifficulty: (d: Difficulty) => void
   setAudio: (enabled: boolean) => void
-  recordResult: (world: WorldId, level: number, stars: number) => void
+  recordResult: (world: WorldId, level: number, stars: number, strokesUsed?: number) => void
   setSeenOnboarding: () => void
   clearUnlockToast: () => void
   saveCustomLevel: (lvl: CustomLevel) => void
@@ -97,24 +151,6 @@ export const useGameStore = create<GameState>()(
 
       setSeenOnboarding: () => set({ hasSeenOnboarding: true }),
       clearUnlockToast: () => set({ unlockToast: null }),
-      saveCustomLevel: (lvl) => set(s => ({ customLevels: [...s.customLevels.filter(c => c.id !== lvl.id), lvl] })),
-      deleteCustomLevel: (id) => set(s => ({ customLevels: s.customLevels.filter(c => c.id !== id) })),
-      playCustomLevel: (id) => set({ playingCustomId: id, screen: 'custom' }),
-
-      recordDailyResult: (dateStr, stars, strokes) => {
-        const s = get()
-        if (s.dailyResults[dateStr]) return  // already recorded today
-        const newResults = { ...s.dailyResults, [dateStr]: { stars, strokes } }
-        // compute streak: consecutive days ending today
-        let streak = 1
-        const check = new Date(dateStr)
-        check.setDate(check.getDate() - 1)
-        while (true) {
-          const prev = check.toISOString().slice(0, 10)
-          if (newResults[prev]) { streak++; check.setDate(check.getDate() - 1) } else break
-        }
-        set({ dailyResults: newResults, dailyStreak: streak, lastDailyDate: dateStr })
-      },
       setAudio: (enabled) => { setAudioEnabled(enabled); set({ audioEnabled: enabled }) },
       setScreen: (screen) => set({ screen }),
       setWorld: (currentWorld) => set({ currentWorld }),
@@ -123,25 +159,54 @@ export const useGameStore = create<GameState>()(
       selectColor: (selectedColorId) => set({ selectedColorId }),
       setDifficulty: (difficulty) => set({ difficulty }),
 
-      recordResult: (world, level, stars) => {
+      saveCustomLevel: (lvl) => {
+        set(s => ({ customLevels: [...s.customLevels.filter(c => c.id !== lvl.id), lvl] }))
+        checkAchievements(get, set)
+      },
+      deleteCustomLevel: (id) => set(s => ({ customLevels: s.customLevels.filter(c => c.id !== id) })),
+      playCustomLevel: (id) => set({ playingCustomId: id, screen: 'custom' }),
+
+      recordDailyResult: (dateStr, stars, strokes) => {
+        const s = get()
+        if (s.dailyResults[dateStr]) return
+        const newResults = { ...s.dailyResults, [dateStr]: { stars, strokes } }
+        let streak = 1
+        const check = new Date(dateStr)
+        check.setDate(check.getDate() - 1)
+        while (true) {
+          const prev = check.toISOString().slice(0, 10)
+          if (newResults[prev]) { streak++; check.setDate(check.getDate() - 1) } else break
+        }
+        set({ dailyResults: newResults, dailyStreak: streak, lastDailyDate: dateStr })
+        checkAchievements(get, set)
+      },
+
+      recordResult: (world, level, stars, strokesUsed?) => {
         const prev = get().progress[world].stars[level] ?? 0
         if (stars <= prev) return
 
-        // snapshot totals before update
         const prevWorldStars = get().progress[world].stars.reduce((a, b) => a + b, 0)
         const prevTotal = Object.values(get().progress).flatMap(p => p.stars).reduce((a, b) => a + b, 0)
 
         const updated = [...get().progress[world].stars]
         updated[level] = stars
         const newProgress = { ...get().progress, [world]: { stars: updated } }
-        set({ progress: newProgress })
+
+        // ── Personal best ─────────────────────────────────────────────────────
+        const pbKey = `${world}-${level}`
+        const newBests = { ...get().personalBests }
+        if (strokesUsed !== undefined && (newBests[pbKey] === undefined || strokesUsed < newBests[pbKey])) {
+          newBests[pbKey] = strokesUsed
+        }
+
+        set({ progress: newProgress, personalBests: newBests })
 
         const newWorldStars = prevWorldStars + (stars - prev)
         const newTotal      = prevTotal + (stars - prev)
 
         let toast: UnlockToast | null = null
 
-        // ── Ball unlocks ──────────────────────────────────────────────────────
+        // ── Ball unlocks ───────────────────────────────────────────────────────
         const unlocked = [...get().unlockedBalls]
         if (newTotal >= 20 && !unlocked.includes('magnet')) {
           unlocked.push('magnet')
@@ -153,7 +218,7 @@ export const useGameStore = create<GameState>()(
         }
         set({ unlockedBalls: unlocked })
 
-        // ── Color unlocks (thresholds: 10, 20, 30 global stars) ──────────────
+        // ── Color unlocks ──────────────────────────────────────────────────────
         if (!toast) {
           for (const c of STROKE_COLORS) {
             if (c.unlockStars > 0 && prevTotal < c.unlockStars && newTotal >= c.unlockStars) {
@@ -163,7 +228,7 @@ export const useGameStore = create<GameState>()(
           }
         }
 
-        // ── World unlock (world stars just crossed 15) ────────────────────────
+        // ── World unlock ───────────────────────────────────────────────────────
         if (!toast) {
           const worldIdx = WORLDS.findIndex(w => w.id === world)
           const nextWorld = WORLDS[worldIdx + 1]
@@ -174,23 +239,26 @@ export const useGameStore = create<GameState>()(
         }
 
         if (toast) set({ unlockToast: toast })
+        checkAchievements(get, set)
       },
     }),
     {
       name: 'drawvity-v1',
       partialize: (s) => ({
-        progress:           s.progress,
-        unlockedBalls:      s.unlockedBalls,
-        unlockedColors:     s.unlockedColors,
-        selectedBall:       s.selectedBall,
-        selectedColorId:    s.selectedColorId,
-        difficulty:         s.difficulty,
-        hasSeenOnboarding:  s.hasSeenOnboarding,
-        audioEnabled:       s.audioEnabled,
-        customLevels:       s.customLevels,
-        dailyResults:       s.dailyResults,
-        dailyStreak:        s.dailyStreak,
-        lastDailyDate:      s.lastDailyDate,
+        progress:               s.progress,
+        unlockedBalls:          s.unlockedBalls,
+        unlockedColors:         s.unlockedColors,
+        selectedBall:           s.selectedBall,
+        selectedColorId:        s.selectedColorId,
+        difficulty:             s.difficulty,
+        hasSeenOnboarding:      s.hasSeenOnboarding,
+        audioEnabled:           s.audioEnabled,
+        customLevels:           s.customLevels,
+        dailyResults:           s.dailyResults,
+        dailyStreak:            s.dailyStreak,
+        lastDailyDate:          s.lastDailyDate,
+        personalBests:          s.personalBests,
+        unlockedAchievements:   s.unlockedAchievements,
       }),
     }
   )

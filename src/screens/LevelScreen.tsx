@@ -81,7 +81,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false, customLevel
     if (dailyDate) {
       recordDailyResult(dailyDate, stars, strokesUsed)
     } else if (!freeDraw && !customLevel) {
-      recordResult(currentWorld, currentLevel, stars)
+      recordResult(currentWorld, currentLevel, stars, strokesUsed)
     }
     setStrokesUsedOnWin(strokesUsed)
     setLaunching(false)

@@ -16,6 +16,7 @@ const CARDS = [
   { id: 'free' as ScreenId,       label: 'Free Draw',    desc: 'Sandbox mode',     icon: '✎', tone: palette.tertiary },
   { id: 'collection' as ScreenId, label: 'Collection',   desc: 'Your unlocks',     icon: '★', tone: palette.secondary },
   { id: 'editor' as ScreenId,     label: 'Level Editor', desc: 'Build your own',   icon: '⚒', tone: '#7C6B52' },
+  { id: 'stats'  as ScreenId,     label: 'Stats',        desc: 'Progress & badges', icon: '📊', tone: '#5B8DD9' },
 ]
 
 const DIFFICULTIES: { id: Difficulty; label: string; desc: string }[] = [

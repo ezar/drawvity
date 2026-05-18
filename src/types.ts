@@ -1,6 +1,6 @@
 export type WorldId = 'lab' | 'factory' | 'castle' | 'space'
 export type BallId = 'classic' | 'heavy' | 'bouncy' | 'feather' | 'magnet' | 'comet'
-export type ScreenId = 'menu' | 'map' | 'level' | 'free' | 'collection' | 'editor' | 'custom' | 'daily'
+export type ScreenId = 'menu' | 'map' | 'level' | 'free' | 'collection' | 'editor' | 'custom' | 'daily' | 'stats'
 
 export interface DailyResult { stars: number; strokes: number }
 
