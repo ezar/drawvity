@@ -11,17 +11,36 @@ import {
 } from '../engine/renderer'
 import { playTap } from '../engine/audio'
 import { hapticTap } from '../hooks/useHaptic'
+import { useIsPortrait } from '../hooks/useIsPortrait'
 import { buildShareURL } from '../utils/levelShare'
 import type { Point, Obstacle, WorldId, CustomLevel } from '../types'
 
-type Tool = 'obstacle' | 'spawn' | 'goal' | 'erase'
+type Tool = 'obstacle' | 'spawn' | 'goal' | 'erase' | 'shapes'
 
 interface Props { onBack: () => void }
 
-const HUD_H     = 56
 const TOOLBAR_H = 64
+// HUD height: 56px landscape, 96px portrait (2 rows)
+function hudH(portrait: boolean) { return portrait ? 96 : 56 }
+
+// ── Preset shapes (normalized coords) ─────────────────────────────────────────
+const SHAPE_PRESETS: { id: string; label: string; icon: string; obs: Obstacle }[] = [
+  { id: 'shelf',    label: 'Shelf',    icon: '—',  obs: { points: [{ x: 0.12, y: 0.45 }, { x: 0.85, y: 0.45 }] } },
+  { id: 'ramp-up',  label: 'Ramp ↗',  icon: '↗',  obs: { points: [{ x: 0.1, y: 0.72 }, { x: 0.82, y: 0.22 }] } },
+  { id: 'ramp-dn',  label: 'Ramp ↘',  icon: '↘',  obs: { points: [{ x: 0.1, y: 0.22 }, { x: 0.82, y: 0.72 }] } },
+  { id: 'valley',   label: 'Valley',   icon: 'V',  obs: { points: [{ x: 0.08, y: 0.22 }, { x: 0.45, y: 0.68 }, { x: 0.85, y: 0.22 }] } },
+  { id: 'steps',    label: 'Steps',    icon: '≡',  obs: { points: [{ x: 0.08, y: 0.28 }, { x: 0.33, y: 0.28 }, { x: 0.33, y: 0.5 }, { x: 0.58, y: 0.5 }, { x: 0.58, y: 0.72 }, { x: 0.85, y: 0.72 }] } },
+  { id: 'wall',     label: 'Wall',     icon: '|',  obs: { points: [{ x: 0.5, y: 0.1 }, { x: 0.5, y: 0.78 }] } },
+  { id: 'corner',   label: 'Corner',   icon: '⌐',  obs: { points: [{ x: 0.15, y: 0.2 }, { x: 0.15, y: 0.78 }, { x: 0.82, y: 0.78 }] } },
+  { id: 'bumper',   label: 'Bumper',   icon: '◉',  obs: { kind: 'circle', points: [], center: { x: 0.5, y: 0.42 }, radius: 0.08 } },
+  { id: 'bump-sm',  label: 'Mini ◎',   icon: '◎',  obs: { kind: 'circle', points: [], center: { x: 0.5, y: 0.42 }, radius: 0.05 } },
+  { id: 'wedge-l',  label: 'Wedge ◁',  icon: '◁',  obs: { kind: 'triangle', points: [{ x: 0.12, y: 0.72 }, { x: 0.5, y: 0.22 }, { x: 0.5, y: 0.72 }] } },
+  { id: 'wedge-r',  label: 'Wedge ▷',  icon: '▷',  obs: { kind: 'triangle', points: [{ x: 0.5, y: 0.72 }, { x: 0.5, y: 0.22 }, { x: 0.88, y: 0.72 }] } },
+  { id: 'arch',     label: 'Arch',     icon: '∩',  obs: { points: [{ x: 0.12, y: 0.78 }, { x: 0.18, y: 0.35 }, { x: 0.5, y: 0.15 }, { x: 0.82, y: 0.35 }, { x: 0.88, y: 0.78 }] } },
+]
 
 export function LevelEditorScreen({ onBack }: Props) {
+  const portrait = useIsPortrait()
   const { selectedBall, saveCustomLevel, deleteCustomLevel, playCustomLevel, customLevels } = useGameStore()
 
   // ── editor state ───────────────────────────────────────────────────────────
@@ -32,6 +51,7 @@ export function LevelEditorScreen({ onBack }: Props) {
   const [spawn, setSpawn]         = useState<Point>({ x: 0.1, y: 0.15 })
   const [goal,  setGoal]          = useState<Point>({ x: 0.85, y: 0.8 })
   const [tool,  setTool]          = useState<Tool>('obstacle')
+  const [shapesOpen, setShapesOpen] = useState(false)
 
   // ── test mode state ────────────────────────────────────────────────────────
   const [testing,        setTesting]        = useState(false)
@@ -54,13 +74,14 @@ export function LevelEditorScreen({ onBack }: Props) {
   const canvasRef   = useRef<HTMLCanvasElement>(null)
   const drawingRef  = useRef<Point[] | null>(null)
 
-  const canvasH = () => window.innerHeight - HUD_H - TOOLBAR_H
+  const canvasH = () => window.innerHeight - hudH(portrait) - TOOLBAR_H
   const [size, setSize] = useState({ w: window.innerWidth, h: canvasH() })
   useEffect(() => {
     const onResize = () => setSize({ w: window.innerWidth, h: canvasH() })
     window.addEventListener('resize', onResize)
     return () => window.removeEventListener('resize', onResize)
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portrait])
 
   // ── canvas render ──────────────────────────────────────────────────────────
   const render = useCallback(() => {
@@ -113,14 +134,16 @@ export function LevelEditorScreen({ onBack }: Props) {
     } else if (tool === 'obstacle') {
       drawingRef.current = [pt]
     } else if (tool === 'erase') {
-      // remove obstacle closest to click (within 24px)
-      let closest = -1, minD = 24
-      obstacles.forEach((obs, i) =>
-        obs.points.forEach(np => {
+      // remove obstacle closest to click (within 36px); check both points and center
+      let closest = -1, minD = 36
+      obstacles.forEach((obs, i) => {
+        const checkPt = (np: Point) => {
           const d = Math.hypot(np.x * size.w - pt.x, np.y * size.h - pt.y)
           if (d < minD) { minD = d; closest = i }
-        })
-      )
+        }
+        obs.points.forEach(checkPt)
+        if (obs.center) checkPt(obs.center)
+      })
       if (closest >= 0) setObstacles(prev => prev.filter((_, i) => i !== closest))
     }
   }
@@ -145,23 +168,30 @@ export function LevelEditorScreen({ onBack }: Props) {
   }
 
   // ── save to store ──────────────────────────────────────────────────────────
-  const buildLevel = (): CustomLevel => ({
-    id: `custom-${Date.now()}`,
+  const buildLevel = (id: string, ts: number): CustomLevel => ({
+    id,
     name: levelName || 'Untitled',
     worldId, ballSpawn: spawn, goal, strokesMax,
     obstacles: obstacles.map(o => ({
+      ...(o.kind ? { kind: o.kind } : {}),
       points: o.points.map(p => ({ x: +p.x.toFixed(3), y: +p.y.toFixed(3) })),
+      ...(o.center ? { center: { x: +o.center.x.toFixed(3), y: +o.center.y.toFixed(3) } } : {}),
+      ...(o.radius != null ? { radius: +o.radius.toFixed(3) } : {}),
+      ...(o.restitution != null ? { restitution: o.restitution } : {}),
     })),
-    createdAt: Date.now(),
+    createdAt: ts,
   })
 
   const saveLevel = () => {
-    saveCustomLevel(buildLevel())
+    const now = Date.now()
+    saveCustomLevel(buildLevel(`custom-${now}`, now))
     setSaved(true); setTimeout(() => setSaved(false), 2000)
   }
 
   const shareLevel = async () => {
-    const lvl = buildLevel()
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now()
+    const lvl = buildLevel(`custom-${now}`, now)
     saveCustomLevel(lvl)
     const url = buildShareURL(lvl)
     try {
@@ -176,15 +206,20 @@ export function LevelEditorScreen({ onBack }: Props) {
 
   // ── export ─────────────────────────────────────────────────────────────────
   const exportJSON = () => {
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now()
     const lvl = {
-      id: `custom-${Date.now()}`,
+      id: `custom-${now}`,
       name: levelName,
       worldId,
       ballSpawn: { x: +spawn.x.toFixed(3), y: +spawn.y.toFixed(3) },
       goal:      { x: +goal.x.toFixed(3),  y: +goal.y.toFixed(3)  },
       strokesMax,
       obstacles: obstacles.map(o => ({
+        ...(o.kind ? { kind: o.kind } : {}),
         points: o.points.map(p => ({ x: +p.x.toFixed(3), y: +p.y.toFixed(3) })),
+        ...(o.center ? { center: { x: +o.center.x.toFixed(3), y: +o.center.y.toFixed(3) } } : {}),
+        ...(o.radius != null ? { radius: +o.radius.toFixed(3) } : {}),
       })),
     }
     navigator.clipboard.writeText(JSON.stringify(lvl, null, 2))
@@ -197,11 +232,11 @@ export function LevelEditorScreen({ onBack }: Props) {
 
   // ── TEST MODE ──────────────────────────────────────────────────────────────
   if (testing) {
-    const testH = window.innerHeight - HUD_H
+    const testH = window.innerHeight - hudH(portrait)
     return (
       <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: world.bg }}>
         <div style={{
-          height: HUD_H, display: 'flex', alignItems: 'center',
+          height: hudH(portrait), display: 'flex', alignItems: 'center',
           padding: '0 12px', gap: 8,
           background: 'linear-gradient(to bottom, rgba(0,0,0,.06), transparent)',
           color: textColor, flexShrink: 0,
@@ -273,140 +308,123 @@ export function LevelEditorScreen({ onBack }: Props) {
     </motion.button>
   )
 
+  // ── add preset shape obstacle ──────────────────────────────────────────────
+  const addPreset = (obs: Obstacle) => {
+    hapticTap(); playTap()
+    setObstacles(prev => [...prev, obs])
+    setShapesOpen(false)
+  }
+
   // ── EDITOR VIEW ────────────────────────────────────────────────────────────
+  const iconBtn = (onClick: () => void, icon: string, title: string, active = false) => (
+    <motion.button
+      whileTap={{ scale: 0.88 }}
+      onClick={onClick}
+      title={title}
+      style={{
+        width: 30, height: 30, borderRadius: 999,
+        border: active ? `2px solid ${palette.primary}` : toy.border,
+        background: active ? `${palette.primary}18` : panelBg,
+        color: active ? palette.primary : textColor,
+        cursor: 'pointer', fontSize: 13, boxShadow: toy.shadow, flexShrink: 0,
+        transition: 'border .15s, color .15s, background .15s',
+      }}
+    >{icon}</motion.button>
+  )
+
   return (
     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', background: world.bg }}>
 
-      {/* HUD */}
+      {/* ── HUD — 1 row landscape / 2 rows portrait ── */}
       <div style={{
-        height: HUD_H, display: 'flex', alignItems: 'center',
-        padding: '0 10px', gap: 6, flexShrink: 0, overflow: 'hidden',
+        height: hudH(portrait), display: 'flex', flexDirection: 'column',
+        flexShrink: 0, overflow: 'hidden',
         background: 'linear-gradient(to bottom, rgba(0,0,0,.06), transparent)',
         color: textColor,
       }}>
-        {/* Back */}
-        <motion.button whileTap={{ scale: 0.88 }} onClick={() => { hapticTap(); playTap(); onBack() }}
-          style={{ width: 34, height: 34, borderRadius: 999, border: toy.border, background: panelBg, color: textColor, cursor: 'pointer', fontSize: 15, boxShadow: toy.shadow, flexShrink: 0 }}
-        >←</motion.button>
 
-        {/* Level name */}
-        <input
-          value={levelName}
-          onChange={e => setLevelName(e.target.value)}
-          placeholder="Level name"
-          style={{
-            flex: '1 1 80px', minWidth: 60, maxWidth: 160,
-            fontFamily: 'Caprasimo, serif', fontSize: 15,
-            background: 'transparent', border: 'none', outline: 'none',
-            color: textColor,
-            borderBottom: `1.5px solid ${isSpace ? 'rgba(242,235,218,.25)' : 'rgba(31,26,20,.2)'}`,
-            padding: '2px 4px',
-          }}
-        />
+        {/* Row 1: back · name · [landscape extras] · Test · Save */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: portrait ? '6px 10px 3px' : '0 10px',
+          flex: portrait ? '0 0 auto' : 1,
+        }}>
+          <motion.button whileTap={{ scale: 0.88 }}
+            onClick={() => { hapticTap(); playTap(); onBack() }}
+            style={{ width: 34, height: 34, borderRadius: 999, border: toy.border, background: panelBg, color: textColor, cursor: 'pointer', fontSize: 15, boxShadow: toy.shadow, flexShrink: 0 }}
+          >←</motion.button>
 
-        {/* World selector */}
-        <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
-          {WORLDS.map(w => (
-            <motion.button
-              key={w.id}
-              whileTap={{ scale: 0.88 }}
-              onClick={() => { hapticTap(); playTap(); setWorldId(w.id) }}
-              title={w.name}
-              style={{
-                width: 30, height: 30, borderRadius: 999, border: toy.border,
-                background: worldId === w.id ? world.accent : panelBg,
-                cursor: 'pointer', boxShadow: toy.shadow, fontSize: 13,
-                transition: 'background .15s ease',
-              }}
-            >
-              {w.glyph}
-            </motion.button>
-          ))}
+          <input
+            value={levelName}
+            onChange={e => setLevelName(e.target.value)}
+            placeholder="Level name"
+            style={{
+              flex: '1 1 50px', minWidth: 40,
+              fontFamily: 'Caprasimo, serif', fontSize: 14,
+              background: 'transparent', border: 'none', outline: 'none', color: textColor,
+              borderBottom: `1.5px solid ${isSpace ? 'rgba(242,235,218,.25)' : 'rgba(31,26,20,.2)'}`,
+              padding: '2px 4px',
+            }}
+          />
+
+          {/* landscape: world picker + strokes + clear + share + json */}
+          {!portrait && (<>
+            <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+              {WORLDS.map(w => (
+                <motion.button key={w.id} whileTap={{ scale: 0.88 }}
+                  onClick={() => { hapticTap(); playTap(); setWorldId(w.id) }} title={w.name}
+                  style={{ width: 26, height: 26, borderRadius: 999, border: toy.border, background: worldId === w.id ? world.accent : panelBg, cursor: 'pointer', boxShadow: toy.shadow, fontSize: 11, transition: 'background .15s ease', flexShrink: 0 }}
+                >{w.glyph}</motion.button>
+              ))}
+            </div>
+            <select value={strokesMax} onChange={e => setStrokesMax(Number(e.target.value))}
+              style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700, background: panelBg, color: textColor, border: toy.border, borderRadius: 8, padding: '4px 5px', cursor: 'pointer', boxShadow: toy.shadow, flexShrink: 0 }}
+            >{[1,2,3,4,5].map(n => <option key={n} value={n}>{n} stroke{n>1?'s':''}</option>)}</select>
+            <div style={{ flex: 1 }} />
+            {iconBtn(() => { hapticTap(); setObstacles([]) }, '🧹', 'Clear obstacles')}
+            {iconBtn(shareLevel, shared ? '✓' : '🔗', shared ? 'Copied!' : 'Share link', shared)}
+            {iconBtn(exportJSON, copied ? '✓' : '{ }', copied ? 'Copied!' : 'Copy JSON', copied)}
+          </>)}
+
+          <motion.button whileTap={{ scale: 0.9 }}
+            onClick={() => { hapticTap(); playTap(); setTesting(true) }}
+            style={{ height: 34, padding: '0 12px', borderRadius: 999, border: 'none', background: palette.primary, color: '#fff', fontFamily: 'Caprasimo, serif', fontSize: 13, cursor: 'pointer', boxShadow: toy.shadow, flexShrink: 0 }}
+          >▶ Test</motion.button>
+
+          <motion.button whileTap={{ scale: 0.9 }} onClick={saveLevel}
+            style={{ height: 34, padding: '0 10px', borderRadius: 999, border: 'none', background: saved ? '#22c55e' : palette.secondary, color: '#fff', fontFamily: 'Caprasimo, serif', fontSize: 13, cursor: 'pointer', boxShadow: toy.shadow, transition: 'background .2s ease', flexShrink: 0 }}
+          >{saved ? '✓' : '💾'}</motion.button>
         </div>
 
-        <div style={{ flex: 1 }} />
-
-        {/* Strokes */}
-        <select
-          value={strokesMax}
-          onChange={e => setStrokesMax(Number(e.target.value))}
-          style={{
-            fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700,
-            background: panelBg, color: textColor, border: toy.border,
-            borderRadius: 8, padding: '4px 6px', cursor: 'pointer',
-            boxShadow: toy.shadow, flexShrink: 0,
-          }}
-        >
-          {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>{n} stroke{n > 1 ? 's' : ''}</option>)}
-        </select>
-
-        {/* Clear obstacles */}
-        <motion.button whileTap={{ scale: 0.88 }}
-          onClick={() => { hapticTap(); setObstacles([]) }}
-          title="Clear all obstacles"
-          style={{ width: 34, height: 34, borderRadius: 999, border: toy.border, background: panelBg, color: textColor, cursor: 'pointer', fontSize: 14, boxShadow: toy.shadow, flexShrink: 0 }}
-        >🧹</motion.button>
-
-        {/* Test */}
-        <motion.button whileTap={{ scale: 0.9 }}
-          onClick={() => { hapticTap(); playTap(); setTesting(true) }}
-          style={{
-            height: 34, padding: '0 14px', borderRadius: 999, border: 'none',
-            background: palette.primary, color: '#fff',
-            fontFamily: 'Caprasimo, serif', fontSize: 14, cursor: 'pointer',
-            boxShadow: toy.shadow, flexShrink: 0,
-          }}
-        >▶ Test</motion.button>
-
-        {/* Save to game */}
-        <motion.button whileTap={{ scale: 0.9 }}
-          onClick={saveLevel}
-          style={{
-            height: 34, padding: '0 14px', borderRadius: 999, border: 'none',
-            background: saved ? '#22c55e' : palette.secondary,
-            color: '#fff', fontFamily: 'Caprasimo, serif', fontSize: 14,
-            cursor: 'pointer', boxShadow: toy.shadow,
-            transition: 'background .2s ease', whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-        >{saved ? '✓ Saved!' : '💾 Save'}</motion.button>
-
-        {/* Share link */}
-        <motion.button whileTap={{ scale: 0.9 }}
-          onClick={shareLevel}
-          style={{
-            height: 34, padding: '0 14px', borderRadius: 999, border: toy.border,
-            background: shared ? '#22c55e' : panelBg,
-            color: shared ? '#fff' : textColor,
-            fontFamily: 'JetBrains Mono', fontSize: 9, fontWeight: 700,
-            letterSpacing: '.08em', cursor: 'pointer', boxShadow: toy.shadow,
-            transition: 'background .2s ease', whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-        >{shared ? '✓ Copied!' : '🔗 Share'}</motion.button>
-
-        {/* Copy JSON */}
-        <motion.button whileTap={{ scale: 0.9 }}
-          onClick={exportJSON}
-          style={{
-            height: 34, padding: '0 12px', borderRadius: 999,
-            border: toy.border,
-            background: copied ? '#22c55e' : panelBg,
-            color: copied ? '#fff' : textColor,
-            fontFamily: 'JetBrains Mono', fontSize: 9, fontWeight: 700,
-            letterSpacing: '.08em', cursor: 'pointer', boxShadow: toy.shadow,
-            transition: 'background .2s ease', whiteSpace: 'nowrap', flexShrink: 0,
-          }}
-        >{copied ? '✓ Copied!' : '{ } JSON'}</motion.button>
+        {/* Row 2 (portrait only): world picker · strokes · clear · share · json */}
+        {portrait && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '0 10px 5px' }}>
+            <div style={{ display: 'flex', gap: 3, flexShrink: 0 }}>
+              {WORLDS.map(w => (
+                <motion.button key={w.id} whileTap={{ scale: 0.88 }}
+                  onClick={() => { hapticTap(); playTap(); setWorldId(w.id) }} title={w.name}
+                  style={{ width: 26, height: 26, borderRadius: 999, border: toy.border, background: worldId === w.id ? world.accent : panelBg, cursor: 'pointer', boxShadow: toy.shadow, fontSize: 11, transition: 'background .15s ease', flexShrink: 0 }}
+                >{w.glyph}</motion.button>
+              ))}
+            </div>
+            <select value={strokesMax} onChange={e => setStrokesMax(Number(e.target.value))}
+              style={{ fontFamily: 'JetBrains Mono', fontSize: 10, fontWeight: 700, background: panelBg, color: textColor, border: toy.border, borderRadius: 8, padding: '3px 5px', cursor: 'pointer', boxShadow: toy.shadow, flexShrink: 0 }}
+            >{[1,2,3,4,5].map(n => <option key={n} value={n}>{n}✏</option>)}</select>
+            <div style={{ flex: 1 }} />
+            {iconBtn(() => { hapticTap(); setObstacles([]) }, '🧹', 'Clear')}
+            {iconBtn(shareLevel, shared ? '✓' : '🔗', shared ? 'Copied!' : 'Share', shared)}
+            {iconBtn(exportJSON, copied ? '✓' : '{}', copied ? 'Copied!' : 'Copy JSON', copied)}
+          </div>
+        )}
       </div>
 
-      {/* Canvas */}
+      {/* ── Canvas area ── */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         <canvas
           ref={canvasRef}
           style={{
             position: 'absolute', inset: 0, display: 'block', touchAction: 'none',
-            cursor: tool === 'obstacle' ? 'crosshair'
-              : tool === 'erase' ? 'cell'
-              : 'crosshair',
+            cursor: tool === 'erase' ? 'cell' : 'crosshair',
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -414,11 +432,8 @@ export function LevelEditorScreen({ onBack }: Props) {
           onPointerLeave={onPointerUp}
         />
 
-        {/* tool hint overlay */}
-        <div style={{
-          position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)',
-          pointerEvents: 'none',
-        }}>
+        {/* tool hint */}
+        <div style={{ position: 'absolute', top: 12, left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }}>
           <div style={{
             fontFamily: 'JetBrains Mono', fontSize: 10, letterSpacing: '.1em',
             color: textColor, opacity: .35, whiteSpace: 'nowrap',
@@ -429,28 +444,80 @@ export function LevelEditorScreen({ onBack }: Props) {
             {tool === 'spawn'    && '🎱 Tap to place ball spawn'}
             {tool === 'goal'     && '⭐ Tap to place goal star'}
             {tool === 'erase'    && '🗑 Tap an obstacle to erase'}
+            {tool === 'shapes'   && '⬡ Pick a preset shape below'}
           </div>
         </div>
+
+        {/* shapes preset panel — slides up from bottom of canvas */}
+        {shapesOpen && (
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            background: isSpace ? 'rgba(20,16,40,.92)' : 'rgba(255,255,255,.95)',
+            borderTop: toy.border,
+            padding: '10px 12px 12px',
+            display: 'flex', flexDirection: 'column', gap: 8,
+          }}>
+            <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: textColor, opacity: .5 }}>
+              Preset shapes — tap to add
+            </div>
+            <div style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 }}>
+              {SHAPE_PRESETS.map(s => (
+                <motion.button key={s.id}
+                  whileTap={{ scale: 0.88 }}
+                  onClick={() => addPreset(s.obs)}
+                  style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                    padding: '7px 10px', borderRadius: 12, border: toy.border,
+                    background: panelBg, cursor: 'pointer', boxShadow: toy.shadow,
+                    flexShrink: 0,
+                  }}
+                >
+                  <span style={{ fontSize: 18 }}>{s.icon}</span>
+                  <span style={{ fontFamily: 'JetBrains Mono', fontSize: 8, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: textColor, opacity: .6, whiteSpace: 'nowrap' }}>{s.label}</span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Toolbar */}
+      {/* ── Toolbar ── */}
       <div style={{
         height: TOOLBAR_H, display: 'flex', alignItems: 'center',
-        justifyContent: 'center', gap: 8, padding: '0 16px', flexShrink: 0,
+        justifyContent: 'center', gap: 6, padding: '0 12px', flexShrink: 0,
         background: 'linear-gradient(to top, rgba(0,0,0,.06), transparent)',
       }}>
         {toolBtn('obstacle', '✏️', 'Draw')}
         {toolBtn('spawn',    '🎱', 'Spawn')}
         {toolBtn('goal',     '⭐', 'Goal')}
         {toolBtn('erase',    '🗑️', 'Erase')}
+
+        {/* Shapes toggle */}
+        <motion.button
+          whileTap={{ scale: 0.88 }}
+          onClick={() => { hapticTap(); playTap(); setShapesOpen(o => !o); setTool('shapes') }}
+          style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+            padding: '6px 12px', borderRadius: 14,
+            background: shapesOpen ? palette.ink : panelBg,
+            color: shapesOpen ? '#fff' : textColor,
+            border: toy.border, cursor: 'pointer', boxShadow: toy.shadow,
+            fontFamily: 'JetBrains Mono', fontSize: 9, fontWeight: 700,
+            letterSpacing: '.08em', textTransform: 'uppercase',
+            transition: 'background .15s ease, color .15s ease',
+          }}
+        >
+          <span style={{ fontSize: 18 }}>⬡</span>
+          <span>Shapes</span>
+        </motion.button>
       </div>
 
-      {/* Saved levels panel */}
+      {/* ── Saved levels ── */}
       {customLevels.length > 0 && (
         <div style={{
           flexShrink: 0, padding: '8px 12px 12px',
           borderTop: `1px solid ${isSpace ? 'rgba(255,255,255,.1)' : 'rgba(31,26,20,.1)'}`,
-          maxHeight: 140, overflowY: 'auto',
+          maxHeight: 120, overflowY: 'auto',
         }}>
           <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, fontWeight: 700, letterSpacing: '.1em', textTransform: 'uppercase', color: textColor, opacity: .45, marginBottom: 6 }}>
             Saved levels
