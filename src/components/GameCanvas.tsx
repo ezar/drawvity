@@ -40,8 +40,19 @@ export function GameCanvas({
     for (const obs of level.obstacles) {
       if (!obs.motion) continue
       const { dx, dy } = movingObstacleOffset(obs.motion.ax * width, obs.motion.ay * height, obs.motion.period, timeMs)
-      const pts = obs.points.map(p => ({ x: p.x * width + dx, y: p.y * height + dy }))
-      drawStrokes(ctx, [pts], world.accent)
+      if (obs.kind === 'circle' && obs.center && obs.radius != null) {
+        const cx = obs.center.x * width + dx
+        const cy = obs.center.y * height + dy
+        const r  = obs.radius * Math.min(width, height)
+        ctx.save()
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2)
+        ctx.fillStyle = world.accent + '28'; ctx.fill()
+        ctx.strokeStyle = world.accent; ctx.lineWidth = 4; ctx.stroke()
+        ctx.restore()
+      } else {
+        const pts = obs.points.map(p => ({ x: p.x * width + dx, y: p.y * height + dy }))
+        drawStrokes(ctx, [pts], world.accent)
+      }
     }
   }, [level.obstacles, width, height, world.accent])
 
@@ -168,8 +179,21 @@ export function GameCanvas({
         const phase = (frames / 60 / def.period) * 2 * Math.PI
         const dx = def.ax * Math.sin(phase)
         const dy = def.ay * Math.sin(phase)
-        const pts = def.pixelPoints.map((p: Point) => ({ x: p.x + dx, y: p.y + dy }))
-        drawStrokes(ctx, [pts], world.accent)
+        // detect circle: single pixel point = center only
+        if (def.pixelPoints.length === 1) {
+          const cx = def.pixelPoints[0].x + dx
+          const cy = def.pixelPoints[0].y + dy
+          // radius = distance from body origin to edge (read from body)
+          const r  = def.bodies[0] ? (def.bodies[0] as Matter.Body & { circleRadius?: number }).circleRadius ?? 30 : 30
+          ctx.save()
+          ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2)
+          ctx.fillStyle = world.accent + '28'; ctx.fill()
+          ctx.strokeStyle = world.accent; ctx.lineWidth = 4; ctx.stroke()
+          ctx.restore()
+        } else {
+          const pts = def.pixelPoints.map((p: Point) => ({ x: p.x + dx, y: p.y + dy }))
+          drawStrokes(ctx, [pts], world.accent)
+        }
       }
       drawBallAndTrail(ctx, x, y, BALL_RADIUS, ball.color, ball.trailColor, trail)
 

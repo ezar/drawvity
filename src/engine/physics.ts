@@ -82,18 +82,44 @@ export function createPhysicsWorld(
   const movingObstacles: MovingObstacleDef[] = []
 
   for (const obs of level.obstacles) {
-    const px = obs.points.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }))
-    const bodies = createPolylineBodies(engine.world, px, { isStatic: true })
+    const kind = obs.kind ?? 'line'
+    const rest = obs.restitution ?? 0.3
 
-    if (obs.motion) {
-      const ax = obs.motion.ax * canvasW
-      const ay = obs.motion.ay * canvasH
-      movingObstacles.push({
-        bodies,
-        originPositions: bodies.map(b => ({ x: b.position.x, y: b.position.y })),
-        pixelPoints: px,
-        ax, ay, period: obs.motion.period,
-      })
+    if (kind === 'circle' && obs.center && obs.radius != null) {
+      const cx = obs.center.x * canvasW
+      const cy = obs.center.y * canvasH
+      const r  = obs.radius * Math.min(canvasW, canvasH)
+      const body = Matter.Bodies.circle(cx, cy, r, { isStatic: true, restitution: Math.max(rest, 0.7), friction: 0.05 })
+      Matter.World.add(engine.world, body)
+      if (obs.motion) {
+        const ax = obs.motion.ax * canvasW
+        const ay = obs.motion.ay * canvasH
+        movingObstacles.push({
+          bodies: [body],
+          originPositions: [{ x: body.position.x, y: body.position.y }],
+          pixelPoints: [obs.center].map(p => ({ x: p.x * canvasW, y: p.y * canvasH })),
+          ax, ay, period: obs.motion.period,
+        })
+      }
+    } else if (kind === 'triangle' && obs.points.length >= 3) {
+      // Create as 3 polyline segments forming a closed triangle
+      const pts = obs.points.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }))
+      const closed = [...pts, pts[0]]
+      createPolylineBodies(engine.world, closed, { isStatic: true, restitution: rest })
+    } else {
+      // default line/polyline
+      const px = obs.points.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }))
+      const bodies = createPolylineBodies(engine.world, px, { isStatic: true, restitution: rest })
+      if (obs.motion) {
+        const ax = obs.motion.ax * canvasW
+        const ay = obs.motion.ay * canvasH
+        movingObstacles.push({
+          bodies,
+          originPositions: bodies.map(b => ({ x: b.position.x, y: b.position.y })),
+          pixelPoints: px,
+          ax, ay, period: obs.motion.period,
+        })
+      }
     }
   }
 

@@ -16,8 +16,8 @@ interface Props {
   panelBg: string
 }
 
-// Normalized 0–1 shapes
-const SHAPES: { id: string; label: string; pts: Point[] }[] = [
+// Normalized 0–1 shapes (pts used as polyline; special ids handled separately)
+const SHAPES: { id: string; label: string; pts: Point[]; isCircle?: boolean; circleR?: number }[] = [
   {
     id: 'shelf',
     label: 'Shelf',
@@ -71,15 +71,47 @@ const SHAPES: { id: string; label: string; pts: Point[] }[] = [
     label: 'Wall',
     pts: [{ x: 0.5, y: 0.1 }, { x: 0.5, y: 0.78 }],
   },
+  {
+    id: 'bumper-lg',
+    label: 'Bumper',
+    pts: [], isCircle: true, circleR: 0.12,
+  },
+  {
+    id: 'bumper-sm',
+    label: 'Mini Bump',
+    pts: [], isCircle: true, circleR: 0.07,
+  },
+  {
+    id: 'wedge-l',
+    label: 'Wedge ◁',
+    pts: [{ x: 0.15, y: 0.75 }, { x: 0.15, y: 0.2 }, { x: 0.82, y: 0.75 }],
+  },
+  {
+    id: 'wedge-r',
+    label: 'Wedge ▷',
+    pts: [{ x: 0.85, y: 0.75 }, { x: 0.85, y: 0.2 }, { x: 0.18, y: 0.75 }],
+  },
 ]
 
 /** Mini SVG preview of a shape */
-function ShapePreview({ pts, color }: { pts: Point[]; color: string }) {
+function ShapePreview({ pts, color, isCircle }: { pts: Point[]; color: string; isCircle?: boolean }) {
   const W = 36, H = 28
+  if (isCircle) {
+    return (
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
+        <circle cx={W/2} cy={H/2} r={10} fill={color + '30'} stroke={color} strokeWidth={2} />
+        <circle cx={W/2} cy={H/2} r={5}  fill="none"         stroke={color} strokeWidth={1.5} strokeDasharray="2 2" />
+      </svg>
+    )
+  }
+  const isClosed = pts.length >= 3
   const points = pts.map(p => `${p.x * W},${p.y * H}`).join(' ')
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{ display: 'block' }}>
-      <polyline points={points} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      {isClosed
+        ? <polygon points={points} fill={color + '25'} stroke={color} strokeWidth={2} strokeLinejoin="round" />
+        : <polyline points={points} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      }
     </svg>
   )
 }
@@ -91,8 +123,25 @@ export function ShapesPalette({ canvasW, canvasH, onAddShape, strokesCount, stro
   const add = (shape: typeof SHAPES[number]) => {
     if (!canAdd) return
     hapticTap(); playTap()
-    const px = shape.pts.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }))
-    onAddShape(px)
+
+    if (shape.isCircle && shape.circleR) {
+      // Approximate circle as 24-point polygon (closed polyline)
+      const cx = 0.5 * canvasW, cy = 0.45 * canvasH
+      const r  = shape.circleR * Math.min(canvasW, canvasH)
+      const N  = 24
+      const px = Array.from({ length: N + 1 }, (_, i) => ({
+        x: cx + r * Math.cos(i / N * 2 * Math.PI),
+        y: cy + r * Math.sin(i / N * 2 * Math.PI),
+      }))
+      onAddShape(px)
+    } else if (shape.pts.length >= 3) {
+      // Triangle: close the polygon
+      const px = shape.pts.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }))
+      onAddShape([...px, px[0]])
+    } else {
+      const px = shape.pts.map(p => ({ x: p.x * canvasW, y: p.y * canvasH }))
+      onAddShape(px)
+    }
     setOpen(false)
   }
 
@@ -152,7 +201,7 @@ export function ShapesPalette({ canvasW, canvasH, onAddShape, strokesCount, stro
                     boxShadow: clickable ? toy.shadow : 'none',
                   }}
                 >
-                  <ShapePreview pts={shape.pts} color={clickable ? palette.ink : palette.inkSoft} />
+                  <ShapePreview pts={shape.pts} color={clickable ? palette.ink : palette.inkSoft} isCircle={shape.isCircle} />
                   <span style={{ fontFamily: 'JetBrains Mono', fontSize: 8, fontWeight: 700, letterSpacing: '.06em', textTransform: 'uppercase', color: palette.inkSoft, whiteSpace: 'nowrap' }}>
                     {shape.label}
                   </span>

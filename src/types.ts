@@ -23,9 +23,16 @@ export interface ObstacleMotion {
   period: number // seconds per full cycle
 }
 
+export type ObstacleKind = 'line' | 'circle' | 'triangle'
+
 export interface Obstacle {
-  points: Point[]  // normalized 0–1
+  kind?: ObstacleKind   // default 'line'
+  points: Point[]       // normalized 0–1 (line/triangle vertices; empty for circle)
   motion?: ObstacleMotion
+  // circle-only:
+  center?: Point        // normalized center
+  radius?: number       // normalized (relative to Math.min(canvasW, canvasH))
+  restitution?: number  // optional bounce override (0–1)
 }
 
 export interface Level {

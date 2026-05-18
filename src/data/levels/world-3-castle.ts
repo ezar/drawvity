@@ -186,6 +186,7 @@ export const castleLevels: Level[] = [
     strokesMax: 2,
     obstacles: [
       { points: [{ x: 0.45, y: 0.0 }, { x: 0.45, y: 0.55 }], motion: { ax: 0, ay: 0.18, period: 2.0 } },
+      { kind: 'circle', points: [], center: { x: 0.75, y: 0.35 }, radius: 0.05, restitution: 0.75 },
       { points: [{ x: 0.08, y: 0.68 }, { x: 0.88, y: 0.68 }] },
     ],
   },
@@ -197,9 +198,9 @@ export const castleLevels: Level[] = [
     goal: { x: 0.5, y: 0.88 },
     strokesMax: 3,
     obstacles: [
-      { points: [{ x: 0.05, y: 0.28 }, { x: 0.42, y: 0.42 }], motion: { ax: 0, ay: 0.1, period: 2.2 } },
-      { points: [{ x: 0.58, y: 0.42 }, { x: 0.95, y: 0.28 }] },
-      { points: [{ x: 0.2, y: 0.65 }, { x: 0.8, y: 0.65 }] },
+      { kind: 'triangle', points: [{ x: 0.08, y: 0.65 }, { x: 0.35, y: 0.28 }, { x: 0.35, y: 0.65 }] },
+      { kind: 'triangle', points: [{ x: 0.65, y: 0.65 }, { x: 0.65, y: 0.28 }, { x: 0.92, y: 0.65 }] },
+      { kind: 'circle', points: [], center: { x: 0.5, y: 0.42 }, radius: 0.06, restitution: 0.8 },
     ],
   },
 ]

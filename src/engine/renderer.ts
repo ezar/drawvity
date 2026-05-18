@@ -77,21 +77,56 @@ export function drawObstacles(
 ): void {
   if (obstacles.length === 0) return
   ctx.save()
-  ctx.strokeStyle = accentColor
-  ctx.lineWidth = 10
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
   ctx.shadowColor = 'rgba(0,0,0,.18)'
   ctx.shadowBlur = 6
 
   for (const obs of obstacles) {
-    if (obs.points.length < 2) continue
-    ctx.beginPath()
-    ctx.moveTo(obs.points[0].x * canvasW, obs.points[0].y * canvasH)
-    for (let i = 1; i < obs.points.length; i++) {
-      ctx.lineTo(obs.points[i].x * canvasW, obs.points[i].y * canvasH)
+    const kind = obs.kind ?? 'line'
+
+    if (kind === 'circle' && obs.center && obs.radius != null) {
+      const cx = obs.center.x * canvasW
+      const cy = obs.center.y * canvasH
+      const r  = obs.radius * Math.min(canvasW, canvasH)
+      // filled bumper
+      ctx.beginPath()
+      ctx.arc(cx, cy, r, 0, Math.PI * 2)
+      ctx.fillStyle = accentColor + '28'
+      ctx.fill()
+      ctx.strokeStyle = accentColor
+      ctx.lineWidth = 4
+      ctx.stroke()
+      // inner highlight ring
+      ctx.beginPath()
+      ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2)
+      ctx.strokeStyle = accentColor + '55'
+      ctx.lineWidth = 2
+      ctx.stroke()
+    } else if (kind === 'triangle' && obs.points.length >= 3) {
+      const pts = obs.points
+      ctx.beginPath()
+      ctx.moveTo(pts[0].x * canvasW, pts[0].y * canvasH)
+      for (let i = 1; i < pts.length; i++)
+        ctx.lineTo(pts[i].x * canvasW, pts[i].y * canvasH)
+      ctx.closePath()
+      ctx.fillStyle = accentColor + '28'
+      ctx.fill()
+      ctx.strokeStyle = accentColor
+      ctx.lineWidth = 4
+      ctx.lineJoin = 'round'
+      ctx.stroke()
+    } else {
+      // default: polyline
+      if (obs.points.length < 2) continue
+      ctx.strokeStyle = accentColor
+      ctx.lineWidth = 10
+      ctx.lineCap = 'round'
+      ctx.lineJoin = 'round'
+      ctx.beginPath()
+      ctx.moveTo(obs.points[0].x * canvasW, obs.points[0].y * canvasH)
+      for (let i = 1; i < obs.points.length; i++)
+        ctx.lineTo(obs.points[i].x * canvasW, obs.points[i].y * canvasH)
+      ctx.stroke()
     }
-    ctx.stroke()
   }
   ctx.restore()
 }

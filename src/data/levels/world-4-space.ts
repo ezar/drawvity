@@ -172,9 +172,9 @@ export const spaceLevels: Level[] = [
     goal: { x: 0.88, y: 0.88 },
     strokesMax: 2,
     obstacles: [
-      { points: [{ x: 0.1, y: 0.45 }, { x: 0.35, y: 0.45 }], motion: { ax: 0.12, ay: 0, period: 2.0 } },
-      { points: [{ x: 0.45, y: 0.35 }, { x: 0.65, y: 0.35 }], motion: { ax: 0, ay: 0.15, period: 1.8 } },
-      { points: [{ x: 0.72, y: 0.55 }, { x: 0.92, y: 0.55 }], motion: { ax: -0.1, ay: 0, period: 2.2 } },
+      { kind: 'circle', points: [], center: { x: 0.28, y: 0.42 }, radius: 0.055, restitution: 0.9, motion: { ax: 0.08, ay: 0, period: 3.0 } },
+      { kind: 'circle', points: [], center: { x: 0.58, y: 0.35 }, radius: 0.04,  restitution: 0.9 },
+      { kind: 'circle', points: [], center: { x: 0.72, y: 0.62 }, radius: 0.048, restitution: 0.9, motion: { ax: -0.06, ay: 0.05, period: 2.5 } },
     ],
   },
   {
@@ -185,9 +185,9 @@ export const spaceLevels: Level[] = [
     goal: { x: 0.88, y: 0.88 },
     strokesMax: 2,
     obstacles: [
-      { points: [{ x: 0.05, y: 0.38 }, { x: 0.48, y: 0.52 }], motion: { ax: 0.1, ay: 0.08, period: 3.5 } },
-      { points: [{ x: 0.52, y: 0.3 }, { x: 0.92, y: 0.45 }] },
-      { points: [{ x: 0.15, y: 0.72 }, { x: 0.82, y: 0.72 }], motion: { ax: 0, ay: 0.1, period: 2.8 } },
+      { kind: 'circle', points: [], center: { x: 0.42, y: 0.38 }, radius: 0.07, restitution: 0.95, motion: { ax: 0.1, ay: 0.06, period: 4.0 } },
+      { kind: 'triangle', points: [{ x: 0.62, y: 0.55 }, { x: 0.88, y: 0.28 }, { x: 0.88, y: 0.55 }] },
+      { points: [{ x: 0.12, y: 0.72 }, { x: 0.55, y: 0.72 }], motion: { ax: 0, ay: 0.1, period: 3.5 } },
     ],
   },
 ]

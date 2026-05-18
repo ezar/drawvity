@@ -159,27 +159,27 @@ export const factoryLevels: Level[] = [
   },
   {
     id: 'factory-13',
-    name: 'The Shuffle',
+    name: 'The Pinball',
     worldId: 'factory',
     ballSpawn: { x: 0.08, y: 0.08 },
     goal: { x: 0.88, y: 0.88 },
     strokesMax: 2,
     obstacles: [
-      { points: [{ x: 0.08, y: 0.38 }, { x: 0.45, y: 0.38 }], motion: { ax: 0.14, ay: 0, period: 2.0 } },
-      { points: [{ x: 0.52, y: 0.58 }, { x: 0.88, y: 0.58 }], motion: { ax: -0.14, ay: 0, period: 2.0 } },
+      { points: [{ x: 0.08, y: 0.38 }, { x: 0.42, y: 0.38 }], motion: { ax: 0.12, ay: 0, period: 2.0 } },
+      { kind: 'circle', points: [], center: { x: 0.62, y: 0.38 }, radius: 0.055, restitution: 0.9 },
+      { kind: 'circle', points: [], center: { x: 0.75, y: 0.62 }, radius: 0.04,  restitution: 0.9 },
     ],
   },
   {
     id: 'factory-14',
-    name: 'Swing Arm',
+    name: 'Steel Wedge',
     worldId: 'factory',
     ballSpawn: { x: 0.08, y: 0.08 },
-    goal: { x: 0.5, y: 0.88 },
+    goal: { x: 0.88, y: 0.88 },
     strokesMax: 2,
     obstacles: [
-      { points: [{ x: 0.25, y: 0.42 }, { x: 0.75, y: 0.42 }], motion: { ax: 0, ay: 0.15, period: 1.5 } },
-      { points: [{ x: 0.08, y: 0.7 }, { x: 0.42, y: 0.7 }] },
-      { points: [{ x: 0.58, y: 0.7 }, { x: 0.92, y: 0.7 }] },
+      { kind: 'triangle', points: [{ x: 0.12, y: 0.72 }, { x: 0.48, y: 0.28 }, { x: 0.48, y: 0.72 }] },
+      { points: [{ x: 0.55, y: 0.55 }, { x: 0.92, y: 0.55 }], motion: { ax: 0, ay: 0.12, period: 1.8 } },
     ],
   },
   {
@@ -191,8 +191,8 @@ export const factoryLevels: Level[] = [
     strokesMax: 3,
     obstacles: [
       { points: [{ x: 0.05, y: 0.3 }, { x: 0.4, y: 0.3 }], motion: { ax: 0.12, ay: 0, period: 1.6 } },
-      { points: [{ x: 0.55, y: 0.3 }, { x: 0.92, y: 0.3 }] },
-      { points: [{ x: 0.25, y: 0.58 }, { x: 0.72, y: 0.58 }], motion: { ax: 0, ay: 0.1, period: 2.4 } },
+      { kind: 'circle', points: [], center: { x: 0.55, y: 0.48 }, radius: 0.05, restitution: 0.85 },
+      { kind: 'triangle', points: [{ x: 0.65, y: 0.72 }, { x: 0.92, y: 0.52 }, { x: 0.92, y: 0.72 }] },
     ],
   },
 ]
