@@ -12,6 +12,7 @@ import { palette } from '../theme/toy'
 import { STROKE_COLORS } from '../data/colors'
 import { DIFFICULTY_STROKES } from '../types'
 import { generateDailyLevel } from '../utils/dailyChallenge'
+import { ShapesPalette } from '../components/ShapesPalette'
 import type { Point, Level } from '../types'
 
 interface Props {
@@ -202,14 +203,33 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false, customLevel
         )}
       </div>
 
-      <BallBar
-        selectedBall={selectedBall}
-        onSelectBall={selectBall}
-        world={world}
-        canLaunch={strokes.length > 0 && !launching && overlay === null}
-        launching={launching}
-        onLaunch={() => setLaunching(true)}
-      />
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        {/* Shapes palette — only in Free Draw mode */}
+        {freeDraw && !launching && overlay === null && (
+          <div style={{ position: 'absolute', bottom: '100%', left: 12, marginBottom: 6, zIndex: 10 }}>
+            <ShapesPalette
+              canvasW={size.w}
+              canvasH={size.h}
+              onAddShape={(pts) => {
+                if (strokes.length < level.strokesMax) setStrokes([...strokes, pts])
+              }}
+              strokesCount={strokes.length}
+              strokesMax={level.strokesMax}
+              disabled={launching}
+              textColor={world.id === 'space' ? '#F2EBDA' : palette.ink}
+              panelBg={world.id === 'space' ? 'rgba(255,255,255,.10)' : palette.paper}
+            />
+          </div>
+        )}
+        <BallBar
+          selectedBall={selectedBall}
+          onSelectBall={selectBall}
+          world={world}
+          canLaunch={strokes.length > 0 && !launching && overlay === null}
+          launching={launching}
+          onLaunch={() => setLaunching(true)}
+        />
+      </div>
     </div>
   )
 }
