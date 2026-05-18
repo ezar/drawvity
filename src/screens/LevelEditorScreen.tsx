@@ -11,6 +11,7 @@ import {
 } from '../engine/renderer'
 import { playTap } from '../engine/audio'
 import { hapticTap } from '../hooks/useHaptic'
+import { buildShareURL } from '../utils/levelShare'
 import type { Point, Obstacle, WorldId, CustomLevel } from '../types'
 
 type Tool = 'obstacle' | 'spawn' | 'goal' | 'erase'
@@ -39,8 +40,9 @@ export function LevelEditorScreen({ onBack }: Props) {
   const [testRetryKey,   setTestRetryKey]   = useState(0)
 
   // ── export / save feedback ─────────────────────────────────────────────────
-  const [copied, setCopied] = useState(false)
-  const [saved,  setSaved]  = useState(false)
+  const [copied,  setCopied]  = useState(false)
+  const [saved,   setSaved]   = useState(false)
+  const [shared,  setShared]  = useState(false)
 
   const world  = WORLD_MAP[worldId]
   const ball   = BALL_MAP[selectedBall]
@@ -156,6 +158,20 @@ export function LevelEditorScreen({ onBack }: Props) {
   const saveLevel = () => {
     saveCustomLevel(buildLevel())
     setSaved(true); setTimeout(() => setSaved(false), 2000)
+  }
+
+  const shareLevel = async () => {
+    const lvl = buildLevel()
+    saveCustomLevel(lvl)
+    const url = buildShareURL(lvl)
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: lvl.name, text: 'Play my Drawvity level!', url })
+      } else {
+        await navigator.clipboard.writeText(url)
+        setShared(true); setTimeout(() => setShared(false), 2000)
+      }
+    } catch { /* cancelled */ }
   }
 
   // ── export ─────────────────────────────────────────────────────────────────
@@ -353,6 +369,19 @@ export function LevelEditorScreen({ onBack }: Props) {
             transition: 'background .2s ease', whiteSpace: 'nowrap', flexShrink: 0,
           }}
         >{saved ? '✓ Saved!' : '💾 Save'}</motion.button>
+
+        {/* Share link */}
+        <motion.button whileTap={{ scale: 0.9 }}
+          onClick={shareLevel}
+          style={{
+            height: 34, padding: '0 14px', borderRadius: 999, border: toy.border,
+            background: shared ? '#22c55e' : panelBg,
+            color: shared ? '#fff' : textColor,
+            fontFamily: 'JetBrains Mono', fontSize: 9, fontWeight: 700,
+            letterSpacing: '.08em', cursor: 'pointer', boxShadow: toy.shadow,
+            transition: 'background .2s ease', whiteSpace: 'nowrap', flexShrink: 0,
+          }}
+        >{shared ? '✓ Copied!' : '🔗 Share'}</motion.button>
 
         {/* Copy JSON */}
         <motion.button whileTap={{ scale: 0.9 }}

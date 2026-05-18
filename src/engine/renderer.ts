@@ -305,8 +305,9 @@ export interface WinParticles {
   step: (ctx: CanvasRenderingContext2D, w: number, h: number) => boolean
 }
 
-export function createWinParticles(gx: number, gy: number, accentColor: string, ballColor: string): WinParticles {
-  const colors = [accentColor, ballColor, '#E8B73E', '#ffffff', '#FAF4E6']
+export function createWinParticles(gx: number, gy: number, accentColor: string, ballColor: string, bgColor = '#FAF4E6'): WinParticles {
+  // World-aware palette: accent-heavy, background as highlight, white
+  const colors = [accentColor, accentColor, ballColor, bgColor === '#0F1330' ? '#7BD3F0' : '#ffffff', bgColor]
   const particles: Particle[] = []
   for (let i = 0; i < 60; i++) {
     const angle = Math.random() * Math.PI * 2
@@ -322,7 +323,7 @@ export function createWinParticles(gx: number, gy: number, accentColor: string, 
   }
   const rings: Ring[] = [
     { r: 12, alpha: 1,   color: accentColor },
-    { r: 8,  alpha: 0.8, color: '#ffffff'   },
+    { r: 8,  alpha: 0.8, color: bgColor === '#0F1330' ? '#7BD3F0' : '#ffffff' },
     { r: 4,  alpha: 0.6, color: ballColor   },
   ]
   let flashAlpha = 1

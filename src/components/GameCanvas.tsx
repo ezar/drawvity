@@ -110,7 +110,7 @@ export function GameCanvas({
         // animated particle explosion on dynamic canvas
         const dynCtx = dynamicRef.current?.getContext('2d')
         if (dynCtx) {
-          const particles = createWinParticles(goalX, goalY, world.accent, ball.color)
+          const particles = createWinParticles(goalX, goalY, world.accent, ball.color, world.bg)
           let winRaf = 0
           const winLoop = () => {
             const continuing = particles.step(dynCtx, width, height)
