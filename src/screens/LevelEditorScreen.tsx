@@ -52,6 +52,9 @@ export function LevelEditorScreen({ onBack }: Props) {
   const [goal,  setGoal]          = useState<Point>({ x: 0.85, y: 0.8 })
   const [tool,  setTool]          = useState<Tool>('obstacle')
   const [shapesOpen, setShapesOpen] = useState(false)
+  const [pendingShape, setPendingShape] = useState<{ obs: Obstacle; label: string } | null>(null)
+  const [draggingIdx, setDraggingIdx] = useState<number | null>(null)
+  const lastDragPt = useRef<Point | null>(null)
 
   // ── test mode state ────────────────────────────────────────────────────────
   const [testing,        setTesting]        = useState(false)
@@ -123,35 +126,85 @@ export function LevelEditorScreen({ onBack }: Props) {
   }
   const normPt = (pt: Point): Point => ({ x: pt.x / size.w, y: pt.y / size.h })
 
+  // ── find closest obstacle index within pixel threshold ─────────────────────
+  const findClosest = (pt: Point, threshold = 22): number => {
+    let closest = -1, minD = threshold
+    obstacles.forEach((obs, i) => {
+      const check = (np: Point) => {
+        const d = Math.hypot(np.x * size.w - pt.x, np.y * size.h - pt.y)
+        if (d < minD) { minD = d; closest = i }
+      }
+      obs.points.forEach(check)
+      if (obs.center) check(obs.center)
+    })
+    return closest
+  }
+
   const onPointerDown = (e: React.PointerEvent) => {
     e.preventDefault()
-    const pt = getPt(e)
+    const pt  = getPt(e)
+    const np  = normPt(pt)
+
+    // ── pending shape: place centered at tap ────────────────────────────────
+    if (pendingShape) {
+      const { obs } = pendingShape
+      let placed: Obstacle
+      if (obs.kind === 'circle' && obs.center) {
+        placed = { ...obs, center: { x: np.x, y: np.y } }
+      } else {
+        const xs = obs.points.map(p => p.x)
+        const ys = obs.points.map(p => p.y)
+        const cx = (Math.min(...xs) + Math.max(...xs)) / 2
+        const cy = (Math.min(...ys) + Math.max(...ys)) / 2
+        const dx = np.x - cx, dy = np.y - cy
+        placed = { ...obs, points: obs.points.map(p => ({ x: p.x + dx, y: p.y + dy })) }
+      }
+      setObstacles(prev => [...prev, placed])
+      setPendingShape(null)
+      return
+    }
 
     if (tool === 'spawn') {
-      setSpawn(normPt(pt))
+      setSpawn(np)
     } else if (tool === 'goal') {
-      setGoal(normPt(pt))
+      setGoal(np)
     } else if (tool === 'obstacle') {
-      drawingRef.current = [pt]
+      // drag existing obstacle if pointer is close enough
+      const idx = findClosest(pt)
+      if (idx >= 0) {
+        setDraggingIdx(idx)
+        lastDragPt.current = np
+      } else {
+        drawingRef.current = [pt]
+      }
     } else if (tool === 'erase') {
-      // remove obstacle closest to click (within 36px); check both points and center
-      let closest = -1, minD = 36
-      obstacles.forEach((obs, i) => {
-        const checkPt = (np: Point) => {
-          const d = Math.hypot(np.x * size.w - pt.x, np.y * size.h - pt.y)
-          if (d < minD) { minD = d; closest = i }
-        }
-        obs.points.forEach(checkPt)
-        if (obs.center) checkPt(obs.center)
-      })
-      if (closest >= 0) setObstacles(prev => prev.filter((_, i) => i !== closest))
+      const idx = findClosest(pt, 36)
+      if (idx >= 0) setObstacles(prev => prev.filter((_, i) => i !== idx))
     }
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!drawingRef.current || tool !== 'obstacle') return
     e.preventDefault()
     const pt = getPt(e)
+    const np = normPt(pt)
+
+    // ── drag obstacle ────────────────────────────────────────────────────────
+    if (draggingIdx !== null && lastDragPt.current) {
+      const dx = np.x - lastDragPt.current.x
+      const dy = np.y - lastDragPt.current.y
+      lastDragPt.current = np
+      setObstacles(prev => prev.map((obs, i) => {
+        if (i !== draggingIdx) return obs
+        return {
+          ...obs,
+          points: obs.points.map(p => ({ x: p.x + dx, y: p.y + dy })),
+          ...(obs.center ? { center: { x: obs.center.x + dx, y: obs.center.y + dy } } : {}),
+        }
+      }))
+      return
+    }
+
+    if (!drawingRef.current || tool !== 'obstacle') return
     const pts = drawingRef.current
     const last = pts[pts.length - 1]
     if (Math.hypot(pt.x - last.x, pt.y - last.y) < 4) return
@@ -160,6 +213,11 @@ export function LevelEditorScreen({ onBack }: Props) {
   }
 
   const onPointerUp = () => {
+    if (draggingIdx !== null) {
+      setDraggingIdx(null)
+      lastDragPt.current = null
+      return
+    }
     if (!drawingRef.current) return
     const pts = drawingRef.current
     drawingRef.current = null
@@ -291,7 +349,7 @@ export function LevelEditorScreen({ onBack }: Props) {
     <motion.button
       key={id}
       whileTap={{ scale: 0.88 }}
-      onClick={() => { hapticTap(); playTap(); setTool(id) }}
+      onClick={() => { hapticTap(); playTap(); setTool(id); setPendingShape(null) }}
       style={{
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
         padding: '6px 14px', borderRadius: 14,
@@ -308,11 +366,12 @@ export function LevelEditorScreen({ onBack }: Props) {
     </motion.button>
   )
 
-  // ── add preset shape obstacle ──────────────────────────────────────────────
-  const addPreset = (obs: Obstacle) => {
+  // ── select preset → enter place mode (tap canvas to position) ──────────────
+  const addPreset = (obs: Obstacle, label: string) => {
     hapticTap(); playTap()
-    setObstacles(prev => [...prev, obs])
+    setPendingShape({ obs, label })
     setShapesOpen(false)
+    setTool('obstacle')
   }
 
   // ── EDITOR VIEW ────────────────────────────────────────────────────────────
@@ -424,7 +483,7 @@ export function LevelEditorScreen({ onBack }: Props) {
           ref={canvasRef}
           style={{
             position: 'absolute', inset: 0, display: 'block', touchAction: 'none',
-            cursor: tool === 'erase' ? 'cell' : 'crosshair',
+            cursor: draggingIdx !== null ? 'grabbing' : tool === 'erase' ? 'cell' : pendingShape ? 'copy' : 'crosshair',
           }}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -440,11 +499,12 @@ export function LevelEditorScreen({ onBack }: Props) {
             background: isSpace ? 'rgba(0,0,0,.2)' : 'rgba(255,255,255,.5)',
             padding: '4px 10px', borderRadius: 999,
           }}>
-            {tool === 'obstacle' && '✏ Draw obstacle lines'}
-            {tool === 'spawn'    && '🎱 Tap to place ball spawn'}
-            {tool === 'goal'     && '⭐ Tap to place goal star'}
-            {tool === 'erase'    && '🗑 Tap an obstacle to erase'}
-            {tool === 'shapes'   && '⬡ Pick a preset shape below'}
+            {pendingShape                && `📍 Tap to place: ${pendingShape.label}`}
+            {!pendingShape && tool === 'obstacle' && '✏ Draw lines · drag to move'}
+            {!pendingShape && tool === 'spawn'    && '🎱 Tap to place ball spawn'}
+            {!pendingShape && tool === 'goal'     && '⭐ Tap to place goal star'}
+            {!pendingShape && tool === 'erase'    && '🗑 Tap an obstacle to erase'}
+            {!pendingShape && tool === 'shapes'   && '⬡ Pick a preset shape below'}
           </div>
         </div>
 
@@ -464,7 +524,7 @@ export function LevelEditorScreen({ onBack }: Props) {
               {SHAPE_PRESETS.map(s => (
                 <motion.button key={s.id}
                   whileTap={{ scale: 0.88 }}
-                  onClick={() => addPreset(s.obs)}
+                  onClick={() => addPreset(s.obs, s.label)}
                   style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
                     padding: '7px 10px', borderRadius: 12, border: toy.border,
