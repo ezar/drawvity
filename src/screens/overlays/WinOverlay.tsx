@@ -11,7 +11,8 @@ interface Props {
   onImprove: () => void
   onNext: () => void
   onShare: () => void
-  autoAdvanceSecs?: number   // if set, auto-clicks Next after N seconds
+  autoAdvanceSecs?: number
+  dailyStreak?: number   // when set, shows streak badge (daily mode)
 }
 
 function Star({ shown, color }: { shown: boolean; color: string }) {
@@ -35,7 +36,7 @@ function Star({ shown, color }: { shown: boolean; color: string }) {
 
 const COUNTDOWN_DELAY = 1200 // ms after last star before countdown starts
 
-export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext, onShare, autoAdvanceSecs = 4 }: Props) {
+export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext, onShare, autoAdvanceSecs = 4, dailyStreak }: Props) {
   const portrait = useIsPortrait()
   const [shown, setShown] = useState(0)
   const [countdown, setCountdown] = useState(autoAdvanceSecs)
@@ -95,8 +96,16 @@ export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext, onShare
           maxWidth: 380, width: '100%', textAlign: 'center',
         }}
       >
-        <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: palette.inkSoft, letterSpacing: '.15em', textTransform: 'uppercase' }}>level cleared</div>
+        <div style={{ fontFamily: 'JetBrains Mono', fontSize: 11, color: palette.inkSoft, letterSpacing: '.15em', textTransform: 'uppercase' }}>
+          {dailyStreak !== undefined ? '🗓 daily challenge' : 'level cleared'}
+        </div>
         <div style={{ fontFamily: 'Caprasimo, serif', fontSize: 44, color: palette.ink, lineHeight: 1, marginTop: 6 }}>Nice one!</div>
+        {dailyStreak !== undefined && dailyStreak > 0 && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, background: palette.secondary + '22', borderRadius: 999, padding: '4px 12px' }}>
+            <span style={{ fontSize: 16 }}>🔥</span>
+            <span style={{ fontFamily: 'Caprasimo, serif', fontSize: 16, color: palette.ink }}>{dailyStreak} day streak</span>
+          </div>
+        )}
 
         <div style={{ display: 'flex', justifyContent: 'center', gap: 14, margin: '22px 0 18px' }}>
           {[1, 2, 3].map((i) => (

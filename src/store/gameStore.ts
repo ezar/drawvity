@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { setAudioEnabled } from '../engine/audio'
 import { WORLD_MAP, WORLDS } from '../data/worlds'
 import { STROKE_COLORS } from '../data/colors'
-import type { WorldId, BallId, ScreenId, Progress, Difficulty, CustomLevel } from '../types'
+import type { WorldId, BallId, ScreenId, Progress, Difficulty, CustomLevel, DailyResult } from '../types'
 
 export interface UnlockToast { icon: string; name: string; detail: string }
 
@@ -26,6 +26,9 @@ const initialData = {
   unlockToast: null as UnlockToast | null,
   customLevels: [] as CustomLevel[],
   playingCustomId: null as string | null,
+  dailyResults: {} as Record<string, DailyResult>,
+  dailyStreak: 0,
+  lastDailyDate: null as string | null,
   progress: {
     lab:     emptyProgress(),
     factory: emptyProgress(),
@@ -51,6 +54,9 @@ interface GameState {
   unlockToast: UnlockToast | null
   customLevels: CustomLevel[]
   playingCustomId: string | null
+  dailyResults: Record<string, DailyResult>
+  dailyStreak: number
+  lastDailyDate: string | null
 
   totalStars: (world: WorldId) => number
   isWorldUnlocked: (world: WorldId) => boolean
@@ -68,6 +74,7 @@ interface GameState {
   saveCustomLevel: (lvl: CustomLevel) => void
   deleteCustomLevel: (id: string) => void
   playCustomLevel: (id: string) => void
+  recordDailyResult: (dateStr: string, stars: number, strokes: number) => void
   getInitialState: () => typeof initialData
 }
 
@@ -93,6 +100,21 @@ export const useGameStore = create<GameState>()(
       saveCustomLevel: (lvl) => set(s => ({ customLevels: [...s.customLevels.filter(c => c.id !== lvl.id), lvl] })),
       deleteCustomLevel: (id) => set(s => ({ customLevels: s.customLevels.filter(c => c.id !== id) })),
       playCustomLevel: (id) => set({ playingCustomId: id, screen: 'custom' }),
+
+      recordDailyResult: (dateStr, stars, strokes) => {
+        const s = get()
+        if (s.dailyResults[dateStr]) return  // already recorded today
+        const newResults = { ...s.dailyResults, [dateStr]: { stars, strokes } }
+        // compute streak: consecutive days ending today
+        let streak = 1
+        const check = new Date(dateStr)
+        check.setDate(check.getDate() - 1)
+        while (true) {
+          const prev = check.toISOString().slice(0, 10)
+          if (newResults[prev]) { streak++; check.setDate(check.getDate() - 1) } else break
+        }
+        set({ dailyResults: newResults, dailyStreak: streak, lastDailyDate: dateStr })
+      },
       setAudio: (enabled) => { setAudioEnabled(enabled); set({ audioEnabled: enabled }) },
       setScreen: (screen) => set({ screen }),
       setWorld: (currentWorld) => set({ currentWorld }),
@@ -166,6 +188,9 @@ export const useGameStore = create<GameState>()(
         hasSeenOnboarding:  s.hasSeenOnboarding,
         audioEnabled:       s.audioEnabled,
         customLevels:       s.customLevels,
+        dailyResults:       s.dailyResults,
+        dailyStreak:        s.dailyStreak,
+        lastDailyDate:      s.lastDailyDate,
       }),
     }
   )

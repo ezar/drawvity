@@ -9,6 +9,7 @@ import { LevelEditorScreen } from './screens/LevelEditorScreen'
 import { UnlockToast } from './components/UnlockToast'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { consumeImportHash } from './utils/levelShare'
+import { todayStr } from './utils/dailyChallenge'
 import { palette, toy } from './theme/toy'
 import type { WorldId, CustomLevel } from './types'
 
@@ -72,6 +73,12 @@ export default function App() {
             <LevelEditorScreen onBack={goMenu} />
           </motion.div>
         )}
+        {screen === 'daily' && (
+          <motion.div key={`daily-${todayStr()}`} {...slide} style={{ position: 'absolute', inset: 0 }}>
+            <LevelScreen onBack={goMenu} onNextLevel={goMenu} dailyDate={todayStr()} />
+          </motion.div>
+        )}
+
         {screen === 'custom' && (() => {
           const lvl = customLevels.find(c => c.id === playingCustomId)
           return lvl ? (

@@ -11,24 +11,28 @@ import { getLevel } from '../data/levels'
 import { palette } from '../theme/toy'
 import { STROKE_COLORS } from '../data/colors'
 import { DIFFICULTY_STROKES } from '../types'
+import { generateDailyLevel } from '../utils/dailyChallenge'
 import type { Point, Level } from '../types'
 
 interface Props {
   onBack: () => void
   onNextLevel: () => void
   freeDraw?: boolean
-  customLevel?: Level    // when set, overrides world/level from store
+  customLevel?: Level
+  dailyDate?: string   // 'YYYY-MM-DD' — activates daily challenge mode
 }
 
-export function LevelScreen({ onBack, onNextLevel, freeDraw = false, customLevel }: Props) {
-  const { currentWorld, currentLevel, selectedBall, selectBall, selectedColorId, difficulty, recordResult } = useGameStore()
+export function LevelScreen({ onBack, onNextLevel, freeDraw = false, customLevel, dailyDate }: Props) {
+  const { currentWorld, currentLevel, selectedBall, selectBall, selectedColorId, difficulty, recordResult, recordDailyResult, dailyStreak } = useGameStore()
   const strokeColor = STROKE_COLORS.find(c => c.id === selectedColorId)?.hex ?? palette.ink
-  const strokesMax = customLevel ? customLevel.strokesMax : (freeDraw ? Infinity : DIFFICULTY_STROKES[difficulty])
-  const showTrajectory = difficulty === 'easy' && !freeDraw && !customLevel
-  const world = WORLD_MAP[customLevel?.worldId ?? currentWorld]
+  const dailyLevel = dailyDate ? generateDailyLevel(dailyDate) : null
+  const activeLevel = dailyLevel ?? customLevel
+  const strokesMax = activeLevel ? activeLevel.strokesMax : (freeDraw ? Infinity : DIFFICULTY_STROKES[difficulty])
+  const showTrajectory = difficulty === 'easy' && !freeDraw && !activeLevel
+  const world = WORLD_MAP[activeLevel?.worldId ?? currentWorld]
   const ball = BALL_MAP[selectedBall]
-  const baseLevel = customLevel
-    ? customLevel
+  const baseLevel = activeLevel
+    ? activeLevel
     : freeDraw
       ? { id: 'free', name: 'Free Draw', worldId: currentWorld, ballSpawn: { x: 0.1, y: 0.1 }, goal: { x: -1, y: -1 }, strokesMax: Infinity, obstacles: [] }
       : getLevel(currentWorld, currentLevel)
@@ -73,14 +77,16 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false, customLevel
   }, [strokes, launching, overlay, onBack])
 
   const handleWin = useCallback((strokesUsed: number) => {
-    if (!freeDraw) {
-      const stars = strokesUsed === 1 ? 3 : strokesUsed === 2 ? 2 : 1
+    const stars = strokesUsed === 1 ? 3 : strokesUsed === 2 ? 2 : 1
+    if (dailyDate) {
+      recordDailyResult(dailyDate, stars, strokesUsed)
+    } else if (!freeDraw && !customLevel) {
       recordResult(currentWorld, currentLevel, stars)
     }
     setStrokesUsedOnWin(strokesUsed)
     setLaunching(false)
     setOverlay('win')
-  }, [freeDraw, currentWorld, currentLevel, recordResult])
+  }, [dailyDate, freeDraw, customLevel, currentWorld, currentLevel, recordResult, recordDailyResult])
 
   const handleShare = async () => {
     // grab static canvas (has BG + obstacles + strokes)
@@ -188,6 +194,7 @@ export function LevelScreen({ onBack, onNextLevel, freeDraw = false, customLevel
             onImprove={retry}
             onNext={() => { setOverlay(null); onNextLevel() }}
             onShare={handleShare}
+            dailyStreak={dailyDate ? dailyStreak : undefined}
           />
         )}
         {overlay === 'loss' && (

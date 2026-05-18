@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { toy, palette } from '../theme/toy'
 import { useIsPortrait } from '../hooks/useIsPortrait'
@@ -6,6 +6,7 @@ import { playTap } from '../engine/audio'
 import { hapticTap } from '../hooks/useHaptic'
 import { useGameStore } from '../store/gameStore'
 import { OnboardingOverlay } from './overlays/OnboardingOverlay'
+import { todayStr, dayNumber, secondsUntilMidnight, formatCountdown } from '../utils/dailyChallenge'
 import type { Difficulty, ScreenId } from '../types'
 
 interface Props { onNav: (s: ScreenId) => void }
@@ -25,9 +26,16 @@ const DIFFICULTIES: { id: Difficulty; label: string; desc: string }[] = [
 
 export function MenuScreen({ onNav }: Props) {
   const portrait = useIsPortrait()
-  const { difficulty, setDifficulty, hasSeenOnboarding, setSeenOnboarding, audioEnabled, setAudio } = useGameStore()
-  // auto-show on first launch; user can re-open via "?" button
+  const { difficulty, setDifficulty, hasSeenOnboarding, setSeenOnboarding, audioEnabled, setAudio, dailyResults, dailyStreak } = useGameStore()
   const [showOnboarding, setShowOnboarding] = useState(() => !hasSeenOnboarding)
+  const [countdown, setCountdown] = useState(() => formatCountdown(secondsUntilMidnight()))
+  useEffect(() => {
+    const id = setInterval(() => setCountdown(formatCountdown(secondsUntilMidnight())), 1000)
+    return () => clearInterval(id)
+  }, [])
+  const today     = todayStr()
+  const todayDone = !!dailyResults[today]
+  const dailyNum  = dayNumber(today)
 
   const dismissOnboarding = () => {
     setShowOnboarding(false)
@@ -119,6 +127,48 @@ export function MenuScreen({ onNav }: Props) {
           maxWidth: portrait ? 380 : 420,
         }}
       >
+        {/* Daily Challenge card */}
+        <motion.button
+          variants={{ hidden: { opacity: 0, x: 24 }, visible: { opacity: 1, x: 0 } }}
+          whileHover={{ x: 4 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => { hapticTap(); playTap(); onNav('daily') }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 16,
+            padding: portrait ? '16px 18px' : '20px 22px',
+            background: todayDone ? '#F0FDF4' : 'linear-gradient(135deg, #FFF9E6, #FFF3CC)',
+            color: palette.ink, border: `1.5px solid ${todayDone ? '#86EFAC' : '#E8B73E'}`,
+            borderRadius: toy.radius, boxShadow: toy.shadow, cursor: 'pointer', textAlign: 'left',
+            fontFamily: 'Nunito', position: 'relative', overflow: 'hidden',
+          }}
+        >
+          <div style={{
+            width: portrait ? 44 : 52, height: portrait ? 44 : 52,
+            borderRadius: 999, background: todayDone ? '#22c55e' : palette.secondary, color: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: portrait ? 18 : 22, fontFamily: 'Caprasimo, serif',
+            boxShadow: 'inset 0 -3px 0 rgba(0,0,0,.18)', flexShrink: 0,
+          }}>{todayDone ? '✓' : '🗓'}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontFamily: 'Caprasimo, serif', fontSize: portrait ? 20 : 24, lineHeight: 1 }}>
+              Daily #{dailyNum}
+            </div>
+            <div style={{ fontSize: 11, color: palette.inkSoft, marginTop: 4, fontFamily: 'JetBrains Mono', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+              {todayDone
+                ? `Done! ${dailyStreak > 1 ? `🔥 ${dailyStreak} day streak` : 'Come back tomorrow'}`
+                : 'New challenge today'}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2, flexShrink: 0 }}>
+            <div style={{ fontSize: 16, color: palette.inkSoft }}>→</div>
+            {!todayDone && (
+              <div style={{ fontFamily: 'JetBrains Mono', fontSize: 9, color: palette.inkSoft, opacity: .6 }}>
+                {countdown}
+              </div>
+            )}
+          </div>
+        </motion.button>
+
         {CARDS.map((c) => (
           <motion.button
             key={c.id}
