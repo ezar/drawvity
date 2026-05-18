@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { toy, palette } from '../../theme/toy'
 import { useIsPortrait } from '../../hooks/useIsPortrait'
-import { playWin, playTap } from '../../engine/audio'
+import { playTap } from '../../engine/audio'
 import { hapticWin, hapticTap } from '../../hooks/useHaptic'
 
 interface Props {
@@ -45,7 +45,7 @@ export function WinOverlay({ strokesUsed, strokesMax, onImprove, onNext, onShare
   const stars = strokesUsed === 1 ? 3 : strokesUsed === 2 ? 2 : 1
 
   useEffect(() => {
-    playWin(); hapticWin()
+    hapticWin()
     const t1 = setTimeout(() => { setShown(1); playTap() }, 250)
     const t2 = setTimeout(() => { setShown(2); playTap() }, 600)
     const t3 = setTimeout(() => { setShown(3); playTap() }, 950)

@@ -2,7 +2,7 @@ import { useRef, useEffect, useCallback } from 'react'
 import type { Level, WorldDef, BallDef, Point } from '../types'
 import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail, drawBallSpawn, drawTrajectory, createWinParticles } from '../engine/renderer'
 import { createPhysicsWorld, stepEngine, destroyPhysicsWorld, simulateTrajectory, stepMovingObstacles, movingObstacleOffset } from '../engine/physics'
-import { playDraw, playLaunch, playBounce } from '../engine/audio'
+import { playDraw, playLaunch, playBounce, playStroke, startAmbient, stopAmbient, playWin } from '../engine/audio'
 import Matter from 'matter-js'
 import type { TrailPoint } from '../engine/renderer'
 
@@ -61,6 +61,12 @@ export function GameCanvas({
     drawBallSpawn(ctx, level.ballSpawn, width, height, ball.color, launching, strokes.length > 0)
   }, [width, height, world, level, strokes, strokeColor, ball, launching, showTrajectory])
 
+  // ── ambient music tied to canvas lifetime ────────────────────────────────
+  useEffect(() => {
+    startAmbient(world.id)
+    return () => stopAmbient()
+  }, [world.id])
+
   // ── setup canvases ONLY on size change (avoids compounding ctx.scale)
   useEffect(() => {
     if (staticRef.current)  setupCanvas(staticRef.current,  width, height)
@@ -108,7 +114,7 @@ export function GameCanvas({
 
     Matter.Events.on(engine, 'collisionStart', () => {
       if (done) return
-      playBounce(ballBody.speed)
+      playBounce(ballBody.speed, world.id)
     })
 
     const tick = () => {
@@ -132,6 +138,7 @@ export function GameCanvas({
               winRaf = requestAnimationFrame(winLoop)
             } else {
               cancelAnimationFrame(winRaf)
+              playWin(world.id)
               onWin(strokes.length)
             }
           }
@@ -203,11 +210,12 @@ export function GameCanvas({
   const onPointerMove = (e: React.PointerEvent) => {
     if (!drawingRef.current) return
     e.preventDefault()
-    playDraw()
     const pt = getPt(e)
     const pts = drawingRef.current
     const last = pts[pts.length - 1]
-    if (Math.hypot(pt.x - last.x, pt.y - last.y) < 2) return
+    const dist = Math.hypot(pt.x - last.x, pt.y - last.y)
+    if (dist < 2) return
+    playDraw(dist)
     pts.push(pt)
     // live preview on static canvas
     const ctx = staticRef.current?.getContext('2d')
@@ -222,6 +230,7 @@ export function GameCanvas({
     const pts = drawingRef.current
     drawingRef.current = null
     if (pts.length > 1) {
+      playStroke()
       const next = [...strokes, pts]
       setStrokes(next)
     }
