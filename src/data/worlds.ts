@@ -11,7 +11,7 @@ export const WORLDS: WorldDef[] = [
     glyph: '⚗',
     pattern: 'graph',
     gravity: 1.0,
-    levels: 10,
+    levels: 15,
   },
   {
     id: 'factory',
@@ -23,7 +23,7 @@ export const WORLDS: WorldDef[] = [
     glyph: '⚙',
     pattern: 'metal',
     gravity: 1.2,
-    levels: 10,
+    levels: 15,
   },
   {
     id: 'castle',
@@ -35,7 +35,7 @@ export const WORLDS: WorldDef[] = [
     glyph: '♛',
     pattern: 'stone',
     gravity: 0.9,
-    levels: 10,
+    levels: 15,
   },
   {
     id: 'space',
@@ -47,7 +47,7 @@ export const WORLDS: WorldDef[] = [
     glyph: '✦',
     pattern: 'stars',
     gravity: 0.15,
-    levels: 10,
+    levels: 15,
   },
 ]
 

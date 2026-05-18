@@ -1,7 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react'
 import type { Level, WorldDef, BallDef, Point } from '../types'
 import { setupCanvas, drawWorldBg, drawObstacles, drawStrokes, drawGoalStar, drawBallAndTrail, drawBallSpawn, drawTrajectory, createWinParticles } from '../engine/renderer'
-import { createPhysicsWorld, stepEngine, destroyPhysicsWorld, simulateTrajectory } from '../engine/physics'
+import { createPhysicsWorld, stepEngine, destroyPhysicsWorld, simulateTrajectory, stepMovingObstacles, movingObstacleOffset } from '../engine/physics'
 import { playDraw, playLaunch, playBounce } from '../engine/audio'
 import Matter from 'matter-js'
 import type { TrailPoint } from '../engine/renderer'
@@ -35,14 +35,25 @@ export function GameCanvas({
   const drawingRef = useRef<Point[] | null>(null)
   const rafRef = useRef(0)
 
-  // ── render static layer (BG + obstacles + strokes + trajectory + spawn indicator)
+  // ── helper: draw moving obstacles at given time offset ─────────────────────
+  const drawMovingObstacles = useCallback((ctx: CanvasRenderingContext2D, timeMs: number) => {
+    for (const obs of level.obstacles) {
+      if (!obs.motion) continue
+      const { dx, dy } = movingObstacleOffset(obs.motion.ax * width, obs.motion.ay * height, obs.motion.period, timeMs)
+      const pts = obs.points.map(p => ({ x: p.x * width + dx, y: p.y * height + dy }))
+      drawStrokes(ctx, [pts], world.accent)
+    }
+  }, [level.obstacles, width, height, world.accent])
+
+  // ── render static layer (BG + static obstacles + strokes + trajectory + spawn)
   const renderStatic = useCallback(() => {
     const c = staticRef.current; if (!c) return
     const ctx = c.getContext('2d')!
     drawWorldBg(ctx, width, height, world)
-    drawObstacles(ctx, level.obstacles, width, height, world.accent)
+    // draw only non-moving obstacles on static canvas
+    const staticObs = level.obstacles.filter(o => !o.motion)
+    drawObstacles(ctx, staticObs, width, height, world.accent)
     drawStrokes(ctx, strokes, strokeColor)
-    // trajectory preview (easy mode only, when strokes exist, before launch)
     if (showTrajectory && strokes.length > 0 && !launching) {
       const traj = simulateTrajectory(level, strokes, ball, world, width, height, 280)
       drawTrajectory(ctx, traj, ball.color)
@@ -61,22 +72,25 @@ export function GameCanvas({
     renderStatic()
   }, [renderStatic])
 
-  // ── goal star pulse on dynamic canvas (idle)
+  // ── goal star pulse + moving obstacle animation on dynamic canvas (idle)
   useEffect(() => {
     if (launching) return
     const c = dynamicRef.current; if (!c) return
     const ctx = c.getContext('2d')!
+    const hasMoving = level.obstacles.some(o => o.motion)
     let stop = false
     const tick = () => {
       if (stop) return
       ctx.clearRect(0, 0, width, height)
-      const pulse = Math.sin(Date.now() / 600)
+      const now = Date.now()
+      const pulse = Math.sin(now / 600)
       drawGoalStar(ctx, level.goal, width, height, world.accent, pulse)
+      if (hasMoving) drawMovingObstacles(ctx, now)
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => { stop = true; cancelAnimationFrame(rafRef.current) }
-  }, [launching, level.goal, world.accent, width, height])
+  }, [launching, level.goal, level.obstacles, world.accent, width, height, drawMovingObstacles])
 
   // ── physics loop on launch
   useEffect(() => {
@@ -87,12 +101,11 @@ export function GameCanvas({
     const goalY = level.goal.y * height
 
     playLaunch()
-    const { engine, ballBody } = createPhysicsWorld(level, strokes, ball, world, width, height)
+    const { engine, ballBody, movingObstacles } = createPhysicsWorld(level, strokes, ball, world, width, height)
     const trail: TrailPoint[] = []
     let frames = 0
     let done = false
 
-    // bounce sounds via collision events
     Matter.Events.on(engine, 'collisionStart', () => {
       if (done) return
       playBounce(ballBody.speed)
@@ -101,6 +114,7 @@ export function GameCanvas({
     const tick = () => {
       if (done) return
       stepEngine(engine)
+      if (movingObstacles.length > 0) stepMovingObstacles(movingObstacles, frames)
       const { x, y } = ballBody.position
 
       // win
@@ -142,6 +156,14 @@ export function GameCanvas({
 
       ctx.clearRect(0, 0, width, height)
       drawGoalStar(ctx, level.goal, width, height, world.accent, Math.sin(Date.now() / 600))
+      // draw moving obstacles at current physics positions
+      for (const def of movingObstacles) {
+        const phase = (frames / 60 / def.period) * 2 * Math.PI
+        const dx = def.ax * Math.sin(phase)
+        const dy = def.ay * Math.sin(phase)
+        const pts = def.pixelPoints.map((p: Point) => ({ x: p.x + dx, y: p.y + dy }))
+        drawStrokes(ctx, [pts], world.accent)
+      }
       drawBallAndTrail(ctx, x, y, BALL_RADIUS, ball.color, ball.trailColor, trail)
 
       frames++

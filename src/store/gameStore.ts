@@ -12,7 +12,7 @@ const WORLD_ORDER: WorldId[] = ['lab', 'factory', 'castle', 'space']
 const UNLOCK_THRESHOLD = 15
 
 function emptyProgress(): Progress {
-  return { stars: Array(10).fill(0) as number[] }
+  return { stars: Array(15).fill(0) as number[] }
 }
 
 const initialData = {
@@ -68,11 +68,11 @@ function checkAchievements(
 
   for (const wid of WORLD_ORDER) {
     const ws = s.progress[wid]?.stars ?? []
-    if (ws.length === 10 && ws.every(st => st === 3)) unlock(`perfect-${wid}`)
+    if (ws.length === 15 && ws.every(st => st === 3)) unlock(`perfect-${wid}`)
   }
 
-  if (allStars.length === 40 && allStars.every(st => st === 3)) unlock('grand-master')
-  if (allStars.filter(st => st > 0).length >= 40) unlock('completionist')
+  if (allStars.length === 60 && allStars.every(st => st === 3)) unlock('grand-master')
+  if (allStars.filter(st => st > 0).length >= 60) unlock('completionist')
 
   const dailyCount = Object.keys(s.dailyResults).length
   if (dailyCount >= 1) unlock('daily-first')

@@ -32,7 +32,7 @@ export function StatsScreen({ onBack }: Props) {
   const totalStars    = allStars.reduce((a, b) => a + b, 0)
   const levelsCompleted = allStars.filter(s => s > 0).length
   const perfectLevels   = allStars.filter(s => s === 3).length
-  const maxStars        = 40 * 3
+  const maxStars        = 60 * 3
 
   const totalStarsAll = totalStars
   const colorsUnlocked = STROKE_COLORS.filter(c => totalStarsAll >= c.unlockStars).length
@@ -67,8 +67,8 @@ export function StatsScreen({ onBack }: Props) {
 
       {/* stats grid */}
       <div style={{ display: 'grid', gridTemplateColumns: `repeat(${portrait ? 2 : 4}, 1fr)`, gap: 10 }}>
-        <StatCard label="Levels done"    value={levelsCompleted}  sub={`/ 40`} />
-        <StatCard label="Perfect (3★)"   value={perfectLevels}    sub={`/ 40`} />
+        <StatCard label="Levels done"    value={levelsCompleted}  sub={`/ 60`} />
+        <StatCard label="Perfect (3★)"   value={perfectLevels}    sub={`/ 60`} />
         <StatCard label="Total stars"    value={totalStars}        sub={`/ ${maxStars}`} />
         <StatCard label="1-stroke clears" value={perfectStrokes}  />
         <StatCard label="Daily streak"   value={`${dailyStreak > 0 ? '🔥' : '—'} ${dailyStreak}`} />

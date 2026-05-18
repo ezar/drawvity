@@ -17,8 +17,15 @@ export const DIFFICULTY_STROKES: Record<Difficulty, number> = {
 
 export interface Point { x: number; y: number }
 
+export interface ObstacleMotion {
+  ax: number    // horizontal amplitude (normalized 0–1, relative to canvas width)
+  ay: number    // vertical amplitude
+  period: number // seconds per full cycle
+}
+
 export interface Obstacle {
   points: Point[]  // normalized 0–1
+  motion?: ObstacleMotion
 }
 
 export interface Level {

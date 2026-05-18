@@ -37,7 +37,7 @@ export default function App() {
 
   const nextLevel = () => {
     const next = currentLevel + 1
-    if (next < 10) { setLevel(next) } else { goMap() }
+    if (next < 15) { setLevel(next) } else { goMap() }
   }
 
   return (
